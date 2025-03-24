@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .download {
+        background-color: red;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <input onchange="" type="file" />
+    <script>
+      const input = document.querySelector("input");
+      input.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        console.log("file", file);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const result = reader.result;
+          const a = document.createElement("a");
+          a.href = result;
+          a.download = file.name;
+          a.textContent = `Download ${file.name}`;
+          a.classList.add("download");
+          document.body.appendChild(a);
+        };
+      });
+    </script>
+  </body>
+</html>
