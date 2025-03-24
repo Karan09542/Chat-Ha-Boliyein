@@ -36,9 +36,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
 
   useEffect(() => {
     if (!ipv4) return;
+    
     const socket = io(`http://${ipv4}:1008`);
     setSocket(socket);
-    console.log("ipv4", ipv4);
 
     // total clients
     socket.on("client-total", (total: number) => {

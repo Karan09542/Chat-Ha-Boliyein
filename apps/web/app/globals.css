@@ -100,7 +100,7 @@ body {
   }
   /* max-[400px]:h-[calc(100vh-140px)] h-[calc(100vh-70px)] */
   .message-ul-height {
-    @apply max-[400px]:h-[calc(100vh-180px)] h-[calc(100vh-130px)];
+    @apply max-[400px]:h-[calc(100vh-200px)] h-[calc(100vh-142px)];
   }
 }
 
@@ -130,8 +130,8 @@ body {
   }
 
   :is(.content, .show-content) blockquote {
-    @apply border-l-4 border-blue-700   px-2 py-2 before:content-[url('../assets/Quote.svg')]
-    before:align-middle before:w-7 before:h-7 before:inline-block before:mr-2 after:content-[url('../assets/Quote.svg')] after:align-middle after:w-7 after:h-7 after:inline-block after:mr-2 after:rotate-180;
+    @apply border-l-4 border-blue-700   px-2 py-2 before:content-[url('/Quote.svg')]
+    before:align-middle before:w-7 before:h-7 before:inline-block before:mr-2 after:content-[url('/Quote.svg')] after:align-middle after:w-7 after:h-7 after:inline-block after:mr-2 after:rotate-180;
   }
 
   :is(.content, .show-content) .katex {

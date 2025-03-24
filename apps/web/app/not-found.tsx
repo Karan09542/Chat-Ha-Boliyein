@@ -5,7 +5,7 @@ export default function NotFound() {
     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white text-center p-5 relative">
       {/* Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-20"
+        className="bg-cover bg-center opacity-20"
         style={{ backgroundImage: "url('/shivling.jpg')" }}
       ></div>
 

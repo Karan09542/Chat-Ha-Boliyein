@@ -61,7 +61,6 @@ class SocketService {
 
     this.subClient.on("message", (channel, message) => {
       if (channel === "chat-message") {
-        console.log("msg");
         io.emit("chat-message", message);
       }
       if (channel === "client-total") {
