@@ -6,6 +6,8 @@ import { handleDraftToHtml } from "../../../../utils/draft_utils";
 import { MessageData } from "../../../../utils/types";
 import Tippy from "@tippyjs/react";
 
+// import "../styles/prism-overrides.css";
+
 interface ChatMessageBoxProps {
   messages: MessageData[] | [];
   className?: string;
@@ -15,6 +17,11 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
   messages,
   className,
 }) => {
+
+  // React.useEffect(() => {
+  //   Prism.highlightAll(); // Call this after the DOM is rendered
+  // }, []);
+
   const processedMessages = React.useMemo(() => {
     if (!messages) return [];
     return messages?.map((messageData) => {
@@ -90,7 +97,7 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
                     src={
                       "https://i.pinimg.com/736x/f9/ab/88/f9ab882db7c9fc6bb5f967f01a8c08c2.jpg"
                     }
-                    alt=""
+                    alt="में भोला हुँ"
                     className="h-full w-full rounded-full"
                   />
                 </Tippy>

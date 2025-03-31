@@ -8,7 +8,9 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "noEmit": true,
+    "skipLibCheck": true
   },
   "include": [
     "**/*.ts",
@@ -18,5 +20,5 @@
     ".next/types/**/*.ts",
     "public/sw.js"
 , "app/not-found.tsx"  ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }

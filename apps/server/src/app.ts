@@ -2,6 +2,7 @@ import http from "http";
 import SocketService from "./services/socket";
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
+import dotenv from "dotenv"
 
 import {
   globalErrorHandlingController,
@@ -12,7 +13,12 @@ import {
   fetchURLTitleController,
 } from "./controllers/appController";
 
+// dotenv.config({path: "./.env"});
+// console.log("env: ", process.env)
+
+
 const app = express();
+
 app.use(express.json());
 app.use(cors());
 

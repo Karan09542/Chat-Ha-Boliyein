@@ -3,15 +3,17 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import ChatInput from "./utils/ChatInput";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 import { cn } from "../../../utils/utils";
 import { MessageData } from "../../../utils/types";
 import { useIpv4Store, useTotalClientsStore } from "@store/index";
+import { getSocket } from "../../../utils/socket";
+import { useSearchParams } from "next/navigation";
 
 const DynamicChatMessageBox = React.memo(
   dynamic(() => import("./utils/ChatMessageBox"), {
     ssr: false,
-  })
+  }),
 );
 
 interface ChatBoxProps {
@@ -22,23 +24,30 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
   const [socket, setSocket] = useState<Socket | undefined>(undefined);
   const [messages, setMessages] = useState<MessageData[]>([]);
 
-  useEffect(function handleOverFlowY(){
-    if(typeof window !== undefined){
+  useEffect(function handleOverFlowY() {
+    if (typeof window !== undefined) {
       window.document.body.style.overflowY = "hidden";
     }
-  },[])
-  
+  }, []);
+
   const setTotalClients = useTotalClientsStore(
-    (state) => state.setTotalClients
+    (state) => state.setTotalClients,
   );
 
   const ipv4 = useIpv4Store((state) => state.ipv4);
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (!ipv4) return;
-    
-    const socket = io(`http://${ipv4}:1008`);
+
+    const socket = getSocket({ ipv4 });
+
+    // socket.off("client-total");
+    // socket.off("chat-message");
     setSocket(socket);
+    if(!socket.connected){
+      socket.connect();
+    }
 
     // total clients
     socket.on("client-total", (total: number) => {
@@ -56,7 +65,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
         const isDuplicate = prev.some(
           (msg) =>
             msg.message === parsedMessage.message &&
-            msg.username === parsedMessage.username
+            msg.username === parsedMessage.username,
         );
         return isDuplicate
           ? prev
@@ -64,11 +73,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
       });
     });
     return () => {
-      socket.disconnect();
+      socket.off("client-total");
       socket.off("chat-message");
-      setSocket(undefined);
+      socket.disconnect();
     };
-  }, [ipv4]);
+  }, [ipv4, searchParams.get("id")]);
 
   const sendMessage = (message: string, username: string) => {
     if (socket && message.trim() !== "") {

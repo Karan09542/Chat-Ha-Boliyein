@@ -8,6 +8,10 @@ import {
 import DOMPurify from "dompurify";
 import katex from "katex";
 import { stateToHTML } from "draft-js-export-html";
+
+import hljs from "highlight.js";
+
+
 export const insertImage = (editorState: EditorState, url: string) => {
   const contentState = editorState.getCurrentContent();
   const contentStateWithEntity = contentState.createEntity(
@@ -86,7 +90,6 @@ export const handleDraftToHtml = (postJson: string) => {
         if (entityKey) {
           const entity = contentState.getEntity(entityKey);
           const { src, name } = entity.getData();
-          console.log("entityData", entity.getData());
 
           if (entity.getType() === "IFRAME") {
             // Render the iframe HTML tag
@@ -159,12 +162,20 @@ export const handleDraftToHtml = (postJson: string) => {
   let htmlDocs = html.replace(
     /(<pre><code>.*?<\/code><\/pre>\s*){1,}/g,
     (match) => {
-      match = match.trim();
-      match = match
-        .replace(/<pre><code>/g, "<code>")
-        .replace(/<\/code><\/pre>/g, "</code>");
+      // match = match.trim();
+      // match = match
+      //   // .replace(/<pre><code>/g, "<code>")
+      //   // .replace(/<\/code><\/pre>/g, "</code>");
 
-      return `<div class="code">${match}</div>`;
+      // return `<div class="code">${match}</div>`;
+      let codeContent = "";
+      const doc = domParser.parseFromString(match, "text/html");
+      doc.querySelectorAll("pre code")?.forEach(ele => {
+        codeContent += `<pre><code>${hljs.highlightAuto(ele?.textContent || "").value}</code></pre>` ;
+      })
+      console.log("codeContent: ", codeContent);
+
+      return `<div class="code">${codeContent}</div>`;
     }
   );
 
@@ -181,6 +192,7 @@ export const handleDraftToHtml = (postJson: string) => {
       })}</span>`;
     }
   );
+  
 
   // console.log("htmlDocs", htmlDocs);
 

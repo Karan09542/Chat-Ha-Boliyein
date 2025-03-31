@@ -2,15 +2,17 @@
 
 import React from "react";
 import { cn } from "../../../utils/utils";
+import { RegisterOptions } from "react-hook-form";
 
 interface InputFieldProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   type: string;
-  name: string;
-  value: string;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  name?: string;
+  value?: string;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
   className?: string;
+  register?: any
 }
 const InputField: React.FC<InputFieldProps> = ({
   children,
@@ -20,12 +22,15 @@ const InputField: React.FC<InputFieldProps> = ({
   onChange,
   placeholder,
   className,
+  register
 }) => {
   const [onFocus, setOnFocus] = React.useState(false);
   return (
     <div
       className={cn(
-        ` ${onFocus ? "outline outline-blue-500" : ""}  w-full`,
+        ` ${
+          onFocus ? "outline outline-blue-500" : ""
+        }  w-full`,
         className
       )}
     >
@@ -33,14 +38,18 @@ const InputField: React.FC<InputFieldProps> = ({
         {placeholder}
       </label>
       <input
+        key={`${name}-1`}
         type={type}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         className="outline-none"
-        onFocus={() => setOnFocus(true)}
+        onFocus={() => {
+          setOnFocus(true)
+        }}
         onBlur={() => setOnFocus(false)}
+        {...register} 
       />
       {children}
     </div>

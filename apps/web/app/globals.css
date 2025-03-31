@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Laila:wght@300;400;500;600;700&family=Mukta:wght@200;300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@100..900&display=swap");
 
 @import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
 
 .kalam-light {
   font-family: "Kalam", cursive;
@@ -163,23 +164,32 @@ body {
   display: none;
 }
 
+
+
 .code {
-  @apply gap-x-5 max-w-[600px] w-full bg-white dark:bg-[#232329] text-black dark:text-white rounded px-2 py-2;
+  @apply gap-x-5 w-full max-w-[300px] min-[696px]:max-w-[600px] overflow-auto;
+  scrollbar-color: #fefefe6b transparent;
 }
-.code > code {
+
+/* gap-x-5 max-w-[600px] w-full bg-white dark:bg-[#232329] text-black dark:text-white rounded px-2 py-2 */
+/* .code {
+  @apply gap-x-5 max-w-[600px] w-full bg-[#282c34] text-[#abb2bf] p-2 rounded-md;
+} */
+
+/* .code > pre > code {
   counter-increment: listing;
   @apply flex gap-x-2;
 }
-.code > :first-child::before {
+.code > pre > :first-child::before {
   @apply rounded-t;
 }
-.code > :last-child::before {
+.code > pre > :last-child::before {
   @apply rounded-b;
 }
-.code > ::before {
+.code > pre > *::before {
   content: counter(listing);
-  @apply block bg-[#232329] dark:bg-white text-white dark:text-black px-2;
-}
+  @apply contents px-2 text-white dark:text-black;
+} */
 
 .formatting > * {
   user-select: none;
@@ -258,4 +268,13 @@ body {
 }
 .download-option:hover {
   background-color: #f0f0f0;
+}
+
+.site-icon {
+	position:absolute;
+	inset:-34px -28px;
+     width: 84px;
+    height: auto;
+ padding:2px;
+margin:0;
 }
