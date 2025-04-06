@@ -32,7 +32,7 @@ import ErrorMessage from "../comp_utils/message/ErrorMessage";
 import { AtomicBlockUtils, EditorState, Modifier, RichUtils } from "draft-js";
 import { IoMdAdd } from "react-icons/io";
 
-import { useIpv4Store} from "@store/index";
+// import { useIpv4Store} from "@store/index";
 
 
 interface TextEditorButtonsProps {
@@ -71,6 +71,7 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
   isPostButton = true,
   className,
 }) => {
+
   const [isImageInput, setIsImageInput] = useState(false);
   const [isImageUrlInput, setIsImageUrlInput] = useState(false);
 
@@ -131,8 +132,17 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     setEditorState(RichUtils.toggleBlockType(editorState, "blockquote"));
   };
 
-  const ipv4 = useIpv4Store(state => state.ipv4)
+ const [baseURL, setBaseURL] = useState<string>("")
+useEffect(function connectSocketInEditorButton(){
+  if(typeof window !=="undefined") {
+  const ipv4 = window.location.hostname
   const baseURL = `http://${ipv4}:1008`;
+  setBaseURL(baseURL)
+}
+},[])
+  
+
+
   const accessToken = "सीताराम";
   // check fetch in onAddLink
   const onAddLink = async (link: string) => {

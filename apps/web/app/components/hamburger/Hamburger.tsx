@@ -10,12 +10,13 @@ import "tippy.js/dist/tippy.css";
 import InputField from "../input/InputField";
 import { toast } from "react-toastify";
 import { IoMdCheckmark } from "react-icons/io";
-import { useIpv4Store } from "@store/index";
 import { RxCrossCircled } from "react-icons/rx";
 import { IoIosAdd } from "react-icons/io";
 import { BsClipboard2Check } from "react-icons/bs";
 import { getSocket } from "../../../utils/socket";
 import { Socket } from "socket.io-client";
+import Switch from "../button/switch/Switch"
+import {handleCopy} from "../../../utils/utils"
 
 interface HamburgerProps {
   img?: string;
@@ -26,31 +27,40 @@ const handleProfileData = (key: string, value: string) => {
   localStorage.setItem(key, value);
 };
 
-const createRoom = ({ socket }:{socket:Socket}) => {
-  if (socket) {
-    socket.emit("create-room");
+const createRoom = ({ socket, customeRoomName,setCustomeRoomName }:{socket:Socket, customeRoomName:string, setCustomeRoomName:(customeRoomName:string) => void }) => {
+  if(!socket) return;
+  if (customeRoomName) {
+    socket.emit("create-room", customeRoomName);
+    setCustomeRoomName("")
+  } else {
+    socket.emit("create-room")
   }
 };
 
-const handleCopyToClipboard = (copyTo: string) => {
-  navigator.clipboard.writeText(copyTo);
-  toast.success("Coppied");
-};
-
-const Rooms = ({ rooms, setRooms, socket, setSocket }: any) => {
+const Rooms = ({ rooms, setRooms, socket }: any) => {
   const searchParams = useSearchParams();
   const roomId = searchParams.get("id")
   const [joinTo, setJoinTo] = useState<string>("")
+  const [isCustomeRoomName,setIsCustomeRoomName] = useState<boolean>(false)
+  const [customeRoomName, setCustomeRoomName] = useState<string>("")
   return (
     <div>
-      <h3 className="text-2xl">Rooms</h3>
+      <h3 className="text-2xl flex items-center justify-between">
+	Rooms
+	<Switch 
+	  label="custome"
+	  size="small"
+	  checked={isCustomeRoomName}
+	  onChange={setIsCustomeRoomName}
+	/>
+      </h3>
 
       {roomId ? (
         <p
           onClick={() => {
-            handleCopyToClipboard(roomId)
+            handleCopy({text:roomId})
           }}
-          className="bg-gray-200 py-1 px-2 rounded w-fit cursor-pointer"
+          className="bg-gray-200 py-1 px-2 rounded w-fit cursor-pointer dark:bg-red-500"
         >
           {roomId}
         </p>
@@ -64,7 +74,7 @@ const Rooms = ({ rooms, setRooms, socket, setSocket }: any) => {
               <Tippy content="Enter">
                 <Link
                   href={`/room?id=${item.roomId}`}
-                  className="text-[0.95rem] py-1 pr-3 hover:bg-gray-100 cursor-pointer active:scale-95 transition-all max-w-[150px] w-full truncate select-none"
+                  className="text-[0.95rem] py-1 pr-3 hover:bg-gray-100 dark:hover:bg-red-500 cursor-pointer active:scale-95 transition-all max-w-[150px] w-full truncate select-none"
                 >
                   {item.roomId}
                 </Link>
@@ -72,8 +82,9 @@ const Rooms = ({ rooms, setRooms, socket, setSocket }: any) => {
 
               <div className="flex items-center gap-x-0.5 [&>svg]:active:scale-95 [&>svg]:transition-all">
                 <BsClipboard2Check
+		  className="cursor-pointer"
                   onClick={() => {
-                    handleCopyToClipboard(item.roomId);
+                    handleCopy({text:item.roomId});
                   }}
                   size={18}
                 />
@@ -81,25 +92,45 @@ const Rooms = ({ rooms, setRooms, socket, setSocket }: any) => {
                   size={18}
                   onClick={() => {
                     setRooms(rooms.filter((_:any, i:number) => i !== index));
+		    socket.emit("leave-room", item.roomId)
                   }}
                   className="cursor-pointer text-red-500"
                 />
               </div>
             </div>
           ))}
+	  
+	{isCustomeRoomName && <InputField 
+	   className="p-1 box-border rounded border border-blue-500 w-fit" type="text"
+	   name="Custome Room Name"
+	   placeholder="Custome Room Name"
+	   value={customeRoomName}
+	   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {setCustomeRoomName(e.target.value)}}
+	  />}
+		
           <IoIosAdd
             size={16}
             onClick={() => {
-              createRoom({ socket });
+	      if(isCustomeRoomName && !/\S/.test(customeRoomName)) {
+	      	toast.error("Room name should not empty or space")
+		return;
+	      }
+              createRoom({ socket, customeRoomName, setCustomeRoomName });
             }}
-            className="cursor-pointer text-white bg-green-500 rounded mt-2"
+            className="cursor-pointer text-white bg-green-500 rounded mt-2 active:scale-95 transition-all"
           />
         </div>
       )}
 <>
 	<div className="flex items-center justify-between gap-x-2 mt-2">
-	<InputField type="text" name="joinTo" placeholder="Join To" value={joinTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => {setJoinTo(e.target.value)}} />
-	<Link href={`/room?id=${joinTo}`} className={"bg-blue-500 px-2 py-0.5 rounded text-white"}> join </Link>
+	<InputField 
+	  className="p-1 box-border rounded border border-blue-500" type="text"
+	  name="joinTo"
+	  placeholder="Join To"
+	  value={joinTo}
+	  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {setJoinTo(e.target.value)}}
+	/>
+	<Link href={`/room?id=${joinTo}`} className={"bg-blue-500 px-2 py-0.5 rounded text-white active:scale-95 transition-all"}> join </Link>
 	</div>
 </>
     </div>
@@ -136,7 +167,6 @@ const ProfileContent = ({ data }: any) => {
                     rooms={item?.rooms}
                     setRooms={item?.setRooms}
                     socket={item?.socket}
-                    setSocket={item?.setSocket}
                   />
                 ) : (
                   <div>{item?.label}</div>
@@ -152,6 +182,8 @@ const ProfileContent = ({ data }: any) => {
 };
 
 const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
+  if(typeof window === "undefined") return;
+
   const [inputValue, setInputValue] = React.useState<{
     imageURL: string;
     username: string;
@@ -160,15 +192,11 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
     username: "",
   });
 
-  const ipv4 = useIpv4Store((state) => state.ipv4);
-  const setIpv4 = useIpv4Store((state) => state.setIpv4);
-
   React.useEffect(() => {
     setInputValue({
       imageURL: localStorage.getItem("image") || "",
       username: localStorage.getItem("username") || "",
     });
-    setIpv4(localStorage.getItem("ipv4") || "");
   }, []);
 
   type Room = {
@@ -177,37 +205,26 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
 
   const [rooms, setRooms] = React.useState<Room[]>([]);
 
-  const [socket, setSocket] = useState<Socket | undefined>(undefined);
+  const ipv4 = window.location.hostname;
+  
+  const socket = getSocket({ ipv4 });
 
+const handleRoomExists = async(message:string)=>{
+  toast.error(message)
+}
   React.useEffect(() => {
-    if (!ipv4) return;
-
-    const socket = getSocket({ ipv4 });
-    setSocket(socket);
-
-
-    socket.emit("")
-    // total clients
-    //    socket.on("client-total", (total: number) => {
-    //      total = parseInt(`${total}`);
-    //      total = total > 0 ? total - 1 : total;
-    //      setTotalClients(total);
-    //    });
-
-    // create room
-    socket.on("room-created", (roomId) => {
+    const handleRoomCreated = (roomId:string) => {
       setRooms((prev) => [...(prev || []), { roomId }]);
-    });
-    // socket.on("join-room", (room) => {
-    //   console.log("join room: ", room);
-    // });
+    };
+
+    socket.on("room-created", handleRoomCreated);
+    socket.on("room-exists", handleRoomExists);
 
     return () => {
-      socket.disconnect();
-      socket.off("chat-message");
-      setSocket(undefined);
+     socket.off("room-created", handleRoomCreated);
+     socket.off("room-exists", handleRoomExists);
     };
-  }, [ipv4]);
+  }, []);
 
   const profileData = [
     {
@@ -224,14 +241,12 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
       rooms,
       setRooms,
       socket,
-      setSocket,
     },
     {
       type: "text",
       name: "image",
       value: inputValue?.imageURL,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        // toast(e.target.value);
         setInputValue({ ...inputValue, imageURL: e.target.value });
       },
       placeholder: "image url",
@@ -245,15 +260,6 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
         setInputValue({ ...inputValue, username: e.target.value });
       },
       placeholder: "username",
-    },
-    {
-      type: "text",
-      name: "ipv4",
-      value: ipv4,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        setIpv4(e.target.value);
-      },
-      placeholder: "IPv4 address",
     },
   ];
 

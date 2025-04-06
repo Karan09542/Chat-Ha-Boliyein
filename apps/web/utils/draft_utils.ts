@@ -75,6 +75,34 @@ export const removeAtomicBlock = (
   return newEditorState;
 };
 
+// absolute right-0 top-2 group inline-block
+// absolute right-0 bg-blue-500 rounded p-1
+// relative left-[98%] top-7 bg-white rounded p-1 hidden group-hover:inline-block
+
+
+const buttons =(src:string, name="image") => {
+
+ return (`
+<div class="i-container">
+	<span class="i-dropdown">
+      <button class="i-menu-button">⋮</button>
+      
+     
+<a href="${src}" download="${name}" class="i-dropdown-content">
+<svg class="w-5 h-5 btn-effect" viewBox="0 0 24 24" fill="orange" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12ZM12 6.25C12.4142 6.25 12.75 6.58579 12.75 7V12.1893L14.4697 10.4697C14.7626 10.1768 15.2374 10.1768 15.5303 10.4697C15.8232 10.7626 15.8232 11.2374 15.5303 11.5303L12.5303 14.5303C12.3897 14.671 12.1989 14.75 12 14.75C11.8011 14.75 11.6103 14.671 11.4697 14.5303L8.46967 11.5303C8.17678 11.2374 8.17678 10.7626 8.46967 10.4697C8.76256 10.1768 9.23744 10.1768 9.53033 10.4697L11.25 12.1893V7C11.25 6.58579 11.5858 6.25 12 6.25ZM8 16.25C7.58579 16.25 7.25 16.5858 7.25 17C7.25 17.4142 7.58579 17.75 8 17.75H16C16.4142 17.75 16.75 17.4142 16.75 17C16.75 16.5858 16.4142 16.25 16 16.25H8Z" fill="#1C274C"></path> </g></svg>
+</a>
+
+</span> 
+</div>
+`)
+
+}
+
+
+
+
+
+
 export const handleDraftToHtml = (postJson: string) => {
   let options = {
     inlineStyles: {
@@ -94,7 +122,7 @@ export const handleDraftToHtml = (postJson: string) => {
           if (entity.getType() === "IFRAME") {
             // Render the iframe HTML tag
 
-            return `<div class="iframe-container" style="padding-bottom: 56.25%; height: 0;">
+            return `<div class="iframe-container relative" style="padding-bottom: 56.25%; height: 0;">
                       <iframe
                         src="${src}"
                         frameborder="0"
@@ -102,20 +130,28 @@ export const handleDraftToHtml = (postJson: string) => {
                         allowfullscreen
                         style="width: 100%; max-width: 334px; aspect-ratio: 16/9"
                       ></iframe>
+		      ${buttons(src, name)}
                     </div>`;
           }
 
           if (entity.getType() === "IMAGE") {
-            return `<img src="${src}" alt="embeded image" />`;
+            return `
+		<div class="relative">
+		  <img src="${src}" alt="embeded image" />
+		  ${buttons(src, name)}
+		</div>`
+	 ;
           }
           if (entity.getType() === "AUDIO") {
-            return `<audio controls>
+            return `<audio controls class="relative">
               <source src="${src}" />
+	      ${buttons(src, name)}
             </audio>`;
           }
           if (entity.getType() === "VIDEO") {
             return `<video controls>
               <source src="${src}" />
+ 
             </video>`;
           }
           if (entity.getType() === "LINK") {
@@ -160,7 +196,7 @@ export const handleDraftToHtml = (postJson: string) => {
     });
 
   let htmlDocs = html.replace(
-    /(<pre><code>.*?<\/code><\/pre>\s*){1,}/g,
+    /(<pre><code>.*?<\/code><\/pre>\s*){1,}/gs,
     (match) => {
       // match = match.trim();
       // match = match
@@ -173,7 +209,6 @@ export const handleDraftToHtml = (postJson: string) => {
       doc.querySelectorAll("pre code")?.forEach(ele => {
         codeContent += `<pre><code>${hljs.highlightAuto(ele?.textContent || "").value}</code></pre>` ;
       })
-      console.log("codeContent: ", codeContent);
 
       return `<div class="code">${codeContent}</div>`;
     }

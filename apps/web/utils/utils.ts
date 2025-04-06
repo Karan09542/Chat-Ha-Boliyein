@@ -1,8 +1,10 @@
+import { RefObject } from "react"
 import { clsx, ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 // qrcode-terminal
 import qrcode from "qrcode-terminal"
 import { getIpv4Address } from "../../../utils/getIpv4Address";
+import {toast} from "react-toastify"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -17,6 +19,25 @@ export const generateQrCode = () => {
   const ipv4 = getIpv4Address()
   qrcode.generate(`http://${ipv4}:3000`, { small: true });
 };
+
+export const handleCopy = ({index, refs,text}:{index?: number, refs?:RefObject<(HTMLDivElement | null)[]>, text?:string}) => {
+    const textToCopy = refs && index ? refs.current[index]?.innerText || "" : text;
+    if (!textToCopy) return;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(textToCopy);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = textToCopy;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    toast("Coppied")
+  };
 
 
 // export const sendNotification = (message: string) => {

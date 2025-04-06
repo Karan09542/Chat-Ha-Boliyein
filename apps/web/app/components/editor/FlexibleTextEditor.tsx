@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   // AtomicBlockUtils,
   // CharacterMetadata,
@@ -54,6 +55,9 @@ interface FlexibleTextEditorProps {
   mensionMinHeight?: number;
   mensionMaxHeight?: number;
   setMensionInput?: (value: string) => void;
+
+  handleFocus?: (e: React.FocusEvent<HTMLDivElement>) => void
+  handleBlur?: (e: React.FocusEvent<HTMLDivElement>) => void
 }
 const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   placeholder,
@@ -74,6 +78,9 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   mensionMinHeight = 60,
   mensionMaxHeight = 150,
   setMensionInput,
+
+  handleFocus,
+  handleBlur,
 }) => {
   const toggleOL = () => {
     setEditorState(RichUtils.toggleBlockType(editorState, "ordered-list-item"));
@@ -288,7 +295,6 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         toggleInlineStyle("ITALIC");
         return "handled";
       }
-
       case "ol": {
         toggleOL();
         return "handled";
@@ -700,6 +706,8 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         customStyleMap={customStyleMap}
         handlePastedText={handlePastedText}
         handlePastedFiles={handlePastedFiles}
+	onFocus={handleFocus}
+	onBlur={handleBlur}
       />
       {isPopoverVisible && (
         <MentionPopover

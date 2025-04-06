@@ -13,8 +13,8 @@ export const getIpv4Address = () => {
 //     }
 //     return "";
 //  }
-    if("Wi-Fi 4" in networkInterfaces) {
-        for(const address of networkInterfaces["Wi-Fi 4"]) {
+    if("Wi-Fi 3" in networkInterfaces) {
+        for(const address of networkInterfaces["Wi-Fi 3"]) {
             if(address.family === "IPv4" && !address.internal) {
                 return address.address || "";
             }

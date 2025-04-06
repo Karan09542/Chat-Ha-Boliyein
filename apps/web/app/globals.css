@@ -116,6 +116,10 @@ body {
 
 /* content */
 @layer components {
+
+  .btn-effect {
+   @apply active:scale-80 transition-all cursor-pointer;
+  }
   .hashtag {
     @apply bg-black border cursor-pointer active:scale-95  text-blue-500 font-bold  rounded px-2 py-1;
   }
@@ -277,4 +281,69 @@ body {
     height: auto;
  padding:2px;
 margin:0;
+}
+
+
+
+.i-container {
+position:absolute;
+top:-0.5rem;
+right:0;
+ 
+
+}
+
+.i-menu-button {
+  position: absolute;
+  top:0;
+  right:0;
+
+  background-color: oklch(54.6% 0.245 262.881);
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding:2px;
+  border-radius: 0.2rem;
+}
+
+.i-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.i-dropdown-content {
+  position:absolute;
+  left:100%;
+  top:1.2rem;
+  padding:0.2rem;
+  border-radius:0.2rem;
+  display: none;
+  background-color: white;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.i-dropdown:hover .i-dropdown-content {
+  display: block;
+}
+
+.download-option {
+  display: block;
+
+  text-decoration: none;
+  color: black;
+}
+.download-option:hover {
+  background-color: #f0f0f0;
+}
+
+@keyframes dots {
+  0% { content: 'typ.'; }
+  33% { content: 'typ..'; }
+  66% { content: 'typ...'; }
+}
+
+.typing-indicator .dots::after {
+  content: 'typ.';
+  animation: dot-typing 1s steps(3, end) infinite;
 }

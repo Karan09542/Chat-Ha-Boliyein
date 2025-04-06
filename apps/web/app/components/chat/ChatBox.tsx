@@ -6,7 +6,7 @@ import ChatInput from "./utils/ChatInput";
 import { Socket } from "socket.io-client";
 import { cn } from "../../../utils/utils";
 import { MessageData } from "../../../utils/types";
-import { useIpv4Store, useTotalClientsStore } from "@store/index";
+import { useTotalClientsStore } from "@store/index";
 import { getSocket } from "../../../utils/socket";
 import { useSearchParams } from "next/navigation";
 
@@ -20,12 +20,13 @@ interface ChatBoxProps {
   className?: string;
 }
 const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
+
   const [message, setMessage] = useState("");
-  const [socket, setSocket] = useState<Socket | undefined>(undefined);
+  // const [socket, setSocket] = useState<Socket | undefined>(undefined)
   const [messages, setMessages] = useState<MessageData[]>([]);
 
   useEffect(function handleOverFlowY() {
-    if (typeof window !== undefined) {
+    if (typeof window !== "undefined") {
       window.document.body.style.overflowY = "hidden";
     }
   }, []);
@@ -33,19 +34,20 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
   const setTotalClients = useTotalClientsStore(
     (state) => state.setTotalClients,
   );
-
-  const ipv4 = useIpv4Store((state) => state.ipv4);
   const searchParams = useSearchParams()
 
+   if (typeof window === "undefined") return null;
+    const ipv4 = window.location.hostname
+    const socket = getSocket({ ipv4 });  
+
   useEffect(() => {
-    if (!ipv4) return;
+    
+    // setSocket(socket)
+  
+    socket.off("client-total");
+    socket.off("chat-message");
 
-    const socket = getSocket({ ipv4 });
-
-    // socket.off("client-total");
-    // socket.off("chat-message");
-    setSocket(socket);
-    if(!socket.connected){
+    if(socket && !socket.connected){
       socket.connect();
     }
 
@@ -75,9 +77,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
     return () => {
       socket.off("client-total");
       socket.off("chat-message");
-      socket.disconnect();
     };
-  }, [ipv4, searchParams.get("id")]);
+  }, []);
 
   const sendMessage = (message: string, username: string) => {
     if (socket && message.trim() !== "") {
@@ -106,6 +107,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
         message={message}
         setMessage={setMessage}
         sendMessage={sendMessage}
+	socket={socket}
       />
     </div>
   );

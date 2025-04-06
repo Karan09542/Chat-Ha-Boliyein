@@ -13,7 +13,10 @@ const nextConfig = {
 
     return config;
   },
-
+  // reactStrictMode: false,
+env: {
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY, // 👈 expose to browser if needed
+  },
   experimental: {
     turbo: {
       rules: {

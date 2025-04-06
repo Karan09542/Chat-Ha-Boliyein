@@ -1,12 +1,16 @@
 "use client";
 
-import React from "react";
+import React, {useRef} from "react";
 import { cn } from "../../../../utils/utils";
 import { handleDraftToHtml } from "../../../../utils/draft_utils";
 import { MessageData } from "../../../../utils/types";
 import Tippy from "@tippyjs/react";
+import {toast} from "react-toastify"
 
-// import "../styles/prism-overrides.css";
+import { BsThreeDots } from "react-icons/bs";
+import type {IconType} from "react-icons"
+import { FaCopy } from "react-icons/fa";
+import {handleCopy} from "../../../../utils/utils"
 
 interface ChatMessageBoxProps {
   messages: MessageData[] | [];
@@ -54,6 +58,45 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
     };
   }, []);
 
+  const refs = useRef<(HTMLDivElement | null)[]>([]);
+
+type ThreeDotOption = {
+  svg: IconType;
+  onClick: (index: number) => void;
+  className?: string;
+};
+
+  const threeDotsOptions: ThreeDotOption[] = [
+   {
+     svg: FaCopy,
+     onClick:(index?:number) => handleCopy({index,refs}),
+     className:"bg-red-500"  	
+   }
+   
+ ]
+interface ThreeDotsProps{
+ options: ThreeDotOption[];
+ index:number
+}
+ const ThreeDotsComponent: React.FC<ThreeDotsProps> = ({ options, index }) => {
+  return (
+    <div className="border rounded">
+      {options.map((option, i) => {
+        const { svg:Svg, onClick, className } = option;
+        return (
+	 <div className="p-1">	
+          <Svg
+            key={`dot-option-${i}`}
+            onClick={() => onClick(index)} // use outer index
+            className={`text-white active:scale-95 transition-all cursor-pointer`}
+          />
+	 </div>
+        );
+      })}
+    </div>
+  );
+};
+
   return (
     <ul
       ref={messageUlRef}
@@ -62,7 +105,7 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
         className
       )}
     >
-      {processedMessages?.map((msg, i) => {
+      {processedMessages?.map((msg, i:number) => {
         return (
           <li
             className={cn(
@@ -103,10 +146,26 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
                 </Tippy>
               </div>
             )}
-            <div
-              dangerouslySetInnerHTML={{ __html: msg?.message || "" }}
-              className="content"
-            />
+	    <div className="relative">
+              <div
+		ref={(el) => { 
+		  (refs.current[i] = el)
+		 }
+		}
+                dangerouslySetInnerHTML={{ __html: msg?.message || "" }}
+                className="content pt-4"
+              />
+	      <Tippy 
+		content={<ThreeDotsComponent options={threeDotsOptions} index={i}  />}
+		placement="right"
+		arrow={false}
+		trigger="click"
+		interactive={true}
+		className="[&>:first-child]:!p-0 [&>:first-child]:rounded-lg"
+	      >
+	        <BsThreeDots className="absolute top-0 right-2 text-white cursor-pointer" />
+	      </Tippy>
+	    </div>
           </li>
         );
       })}
