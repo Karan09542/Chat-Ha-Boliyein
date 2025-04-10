@@ -1,16 +1,15 @@
 "use client";
 
-import React, {useRef} from "react";
+import React, { useRef } from "react";
 import { cn } from "../../../../utils/utils";
 import { handleDraftToHtml } from "../../../../utils/draft_utils";
 import { MessageData } from "../../../../utils/types";
 import Tippy from "@tippyjs/react";
-import {toast} from "react-toastify"
 
 import { BsThreeDots } from "react-icons/bs";
-import type {IconType} from "react-icons"
+import type { IconType } from "react-icons";
 import { FaCopy } from "react-icons/fa";
-import {handleCopy} from "../../../../utils/utils"
+import { handleCopy } from "../../../../utils/utils";
 
 interface ChatMessageBoxProps {
   messages: MessageData[] | [];
@@ -22,10 +21,6 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
   className,
 }) => {
 
-  // React.useEffect(() => {
-  //   Prism.highlightAll(); // Call this after the DOM is rendered
-  // }, []);
-
   const processedMessages = React.useMemo(() => {
     if (!messages) return [];
     return messages?.map((messageData) => {
@@ -36,6 +31,7 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
       };
     });
   }, [messages]) as ChatMessageBoxProps["messages"];
+
   const messageUlRef = React.useRef<HTMLUListElement>(null);
 
   React.useEffect(() => {
@@ -60,42 +56,46 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
 
   const refs = useRef<(HTMLDivElement | null)[]>([]);
 
-type ThreeDotOption = {
-  svg: IconType;
-  onClick: (index: number) => void;
-  className?: string;
-};
-
+  type ThreeDotOption = {
+    svg: IconType;
+    onClick: (index: number) => void;
+    className?: string;
+  };
+  
   const threeDotsOptions: ThreeDotOption[] = [
-   {
-     svg: FaCopy,
-     onClick:(index?:number) => handleCopy({index,refs}),
-     className:"bg-red-500"  	
-   }
-   
- ]
-interface ThreeDotsProps{
- options: ThreeDotOption[];
- index:number
-}
- const ThreeDotsComponent: React.FC<ThreeDotsProps> = ({ options, index }) => {
-  return (
-    <div className="border rounded">
-      {options.map((option, i) => {
-        const { svg:Svg, onClick, className } = option;
-        return (
-	 <div className="p-1">	
-          <Svg
-            key={`dot-option-${i}`}
-            onClick={() => onClick(index)} // use outer index
-            className={`text-white active:scale-95 transition-all cursor-pointer`}
-          />
-	 </div>
-        );
-      })}
-    </div>
-  );
-};
+    {
+      svg: FaCopy,
+      onClick: (index?: number) => handleCopy({ index, refs }),
+      className: "bg-red-500",
+    },
+  ];
+
+  interface ThreeDotsProps {
+    options: ThreeDotOption[];
+    index: number;
+  }
+
+  const ThreeDotsComponent: React.FC<ThreeDotsProps> = ({ options, index }) => {
+    return (
+      <div className="border rounded">
+        {options.map((option, i) => {
+          const { svg: Svg, onClick, className } = option;
+          return (
+            <div className="p-1">
+              <Svg
+                key={`dot-option-${i}`}
+                onClick={() => {
+		 onClick(index)
+		 }
+		} // use outer index
+                className={`text-white active:scale-95 transition-all cursor-pointer`}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <ul
@@ -105,7 +105,7 @@ interface ThreeDotsProps{
         className
       )}
     >
-      {processedMessages?.map((msg, i:number) => {
+      {processedMessages?.map((msg, i: number) => {
         return (
           <li
             className={cn(
@@ -117,7 +117,7 @@ interface ThreeDotsProps{
             {msg?.isOwnMessage ? (
               <img
                 data-user-icon
-                className="h-7 w-7 rounded-full"
+                className="min-h-7 min-w-7 max-w-7 max-h-7 rounded-full"
                 src={
                   localStorage?.getItem("image") ||
                   "https://www.reshot.com/preview-assets/icons/X9ZFVKRH6Q/feeling-X9ZFVKRH6Q.svg"
@@ -128,13 +128,13 @@ interface ThreeDotsProps{
               <Tippy content={msg?.username}>
                 <div
                   data-user-icon
-                  className="h-7 w-7 rounded-full bg-gray-400 text-white place-content-center text-center truncate font-bold [&>span]:uppercase"
+                  className="min-h-7 min-w-7 max-w-7 max-h-7 rounded-full bg-gray-400 text-white place-content-center text-center truncate font-bold [&>span]:uppercase"
                 >
                   <span>{msg?.username?.slice(0, 1)}</span>
                 </div>
               </Tippy>
             ) : (
-              <div data-user-icon className="h-7 w-7 aspect-square">
+              <div data-user-icon className="min-h-7 min-w-7 max-w-7 max-h-7 aspect-square">
                 <Tippy content={"में भोला हुँ"}>
                   <img
                     src={
@@ -146,26 +146,27 @@ interface ThreeDotsProps{
                 </Tippy>
               </div>
             )}
-	    <div className="relative">
+            <div className="relative">
               <div
-		ref={(el) => { 
-		  (refs.current[i] = el)
-		 }
-		}
+                ref={(el) => {
+                  refs.current[i] = el;
+                }}
                 dangerouslySetInnerHTML={{ __html: msg?.message || "" }}
                 className="content pt-4"
               />
-	      <Tippy 
-		content={<ThreeDotsComponent options={threeDotsOptions} index={i}  />}
-		placement="right"
-		arrow={false}
-		trigger="click"
-		interactive={true}
-		className="[&>:first-child]:!p-0 [&>:first-child]:rounded-lg"
-	      >
-	        <BsThreeDots className="absolute top-0 right-2 text-white cursor-pointer" />
-	      </Tippy>
-	    </div>
+              <Tippy
+                content={
+                  <ThreeDotsComponent options={threeDotsOptions} index={i} />
+                }
+                placement="right"
+                arrow={false}
+                trigger="click"
+                interactive={true}
+                className="[&>:first-child]:!p-0 [&>:first-child]:rounded-lg"
+              >
+                <BsThreeDots className="absolute top-0 right-2 text-white cursor-pointer" />
+              </Tippy>
+            </div>
           </li>
         );
       })}

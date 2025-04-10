@@ -15,6 +15,12 @@ interface ITotalClientsState {
   setTotalClients: (totalClients: number | string) => void;
 }
 
+type WhoTyping = {path: string, username: string};
+interface IWhoTypingStoreState {
+  whoTyping?: WhoTyping;
+  setWhoTyping: (whoTyping: WhoTyping) => void;
+}
+
 interface IBaseURLStoreState {
   baseURL?: string;
   setBaseURL: (baseURL: string) => void;
@@ -58,6 +64,11 @@ export const useSocketStore = create<ISocketState>((set, get) => ({
 export const useTotalClientsStore = create<ITotalClientsState>((set) => ({
   totalClients: 0,
   setTotalClients: (totalClients) => set({ totalClients }),
+}));
+
+export const useWhoTypingStore = create<IWhoTypingStoreState>((set) => ({
+  whoTyping: { path: "", username: "" },
+  setWhoTyping: (whoTyping) => set({ whoTyping }),
 }));
 
 export const useBaseURLStore = create<IBaseURLStoreState>((set) => ({

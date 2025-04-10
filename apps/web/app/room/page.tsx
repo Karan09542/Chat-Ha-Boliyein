@@ -1,5 +1,6 @@
 import React from "react";
-import RoomChat from "./components/RoomChat";
+import dynamic from "next/dynamic"
+import RoomChat from "./components/RoomChat"
 
 const room: React.FC = () => {
 	return <div>

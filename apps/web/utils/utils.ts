@@ -16,12 +16,13 @@ export const decorateUsername = (username: string) => {
 };
 
 export const generateQrCode = () => {
+  if(process.env.NEXT_PUBLIC_NODE_ENV === "production") return
   const ipv4 = getIpv4Address()
   qrcode.generate(`http://${ipv4}:3000`, { small: true });
 };
 
 export const handleCopy = ({index, refs,text}:{index?: number, refs?:RefObject<(HTMLDivElement | null)[]>, text?:string}) => {
-    const textToCopy = refs && index ? refs.current[index]?.innerText || "" : text;
+    const textToCopy = refs && typeof index === "number" ? refs.current[index]?.innerText : text;
     if (!textToCopy) return;
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(textToCopy);

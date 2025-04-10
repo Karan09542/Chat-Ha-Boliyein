@@ -13,9 +13,6 @@ import {
   fetchURLTitleController,
 } from "./controllers/appController";
 
-// dotenv.config({path: "./.env"});
-// console.log("env: ", process.env)
-
 
 const app = express();
 

@@ -15,8 +15,8 @@ import { IoIosAdd } from "react-icons/io";
 import { BsClipboard2Check } from "react-icons/bs";
 import { getSocket } from "../../../utils/socket";
 import { Socket } from "socket.io-client";
-import Switch from "../button/switch/Switch"
-import {handleCopy} from "../../../utils/utils"
+import Switch from "../button/switch/Switch";
+import { handleCopy } from "../../../utils/utils";
 
 interface HamburgerProps {
   img?: string;
@@ -27,38 +27,46 @@ const handleProfileData = (key: string, value: string) => {
   localStorage.setItem(key, value);
 };
 
-const createRoom = ({ socket, customeRoomName,setCustomeRoomName }:{socket:Socket, customeRoomName:string, setCustomeRoomName:(customeRoomName:string) => void }) => {
-  if(!socket) return;
+const createRoom = ({
+  socket,
+  customeRoomName,
+  setCustomeRoomName,
+}: {
+  socket: Socket;
+  customeRoomName: string;
+  setCustomeRoomName: (customeRoomName: string) => void;
+}) => {
+  if (!socket) return;
   if (customeRoomName) {
     socket.emit("create-room", customeRoomName);
-    setCustomeRoomName("")
+    setCustomeRoomName("");
   } else {
-    socket.emit("create-room")
+    socket.emit("create-room");
   }
 };
 
 const Rooms = ({ rooms, setRooms, socket }: any) => {
   const searchParams = useSearchParams();
-  const roomId = searchParams.get("id")
-  const [joinTo, setJoinTo] = useState<string>("")
-  const [isCustomeRoomName,setIsCustomeRoomName] = useState<boolean>(false)
-  const [customeRoomName, setCustomeRoomName] = useState<string>("")
+  const roomId = searchParams.get("id");
+  const [joinTo, setJoinTo] = useState<string>("");
+  const [isCustomeRoomName, setIsCustomeRoomName] = useState<boolean>(false);
+  const [customeRoomName, setCustomeRoomName] = useState<string>("");
   return (
     <div>
       <h3 className="text-2xl flex items-center justify-between">
-	Rooms
-	<Switch 
-	  label="custome"
-	  size="small"
-	  checked={isCustomeRoomName}
-	  onChange={setIsCustomeRoomName}
-	/>
+        Rooms
+        <Switch
+          label="custome"
+          size="small"
+          checked={isCustomeRoomName}
+          onChange={setIsCustomeRoomName}
+        />
       </h3>
 
       {roomId ? (
         <p
           onClick={() => {
-            handleCopy({text:roomId})
+            handleCopy({ text: roomId });
           }}
           className="bg-gray-200 py-1 px-2 rounded w-fit cursor-pointer dark:bg-red-500"
         >
@@ -66,7 +74,7 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
         </p>
       ) : (
         <div className="py-1">
-          {rooms.map((item: any, index:number) => (
+          {rooms.map((item: any, index: number) => (
             <div
               key={item.roomId || "ram"}
               className="flex items-center justify-between mb-0.5 divide-y-1 divide-red-500"
@@ -82,57 +90,73 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
 
               <div className="flex items-center gap-x-0.5 [&>svg]:active:scale-95 [&>svg]:transition-all">
                 <BsClipboard2Check
-		  className="cursor-pointer"
+                  className="cursor-pointer"
                   onClick={() => {
-                    handleCopy({text:item.roomId});
+                    handleCopy({ text: item.roomId });
                   }}
                   size={18}
                 />
                 <RxCrossCircled
                   size={18}
                   onClick={() => {
-                    setRooms(rooms.filter((_:any, i:number) => i !== index));
-		    socket.emit("leave-room", item.roomId)
+                    setRooms(rooms.filter((_: any, i: number) => i !== index));
+                    socket.emit("leave-room", item.roomId);
                   }}
                   className="cursor-pointer text-red-500"
                 />
               </div>
             </div>
           ))}
-	  
-	{isCustomeRoomName && <InputField 
-	   className="p-1 box-border rounded border border-blue-500 w-fit" type="text"
-	   name="Custome Room Name"
-	   placeholder="Custome Room Name"
-	   value={customeRoomName}
-	   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {setCustomeRoomName(e.target.value)}}
-	  />}
-		
+
+          {isCustomeRoomName && (
+            <InputField
+              className="p-1 box-border rounded border border-blue-500 w-fit"
+              type="text"
+              name="Custome Room Name"
+              placeholder="Custome Room Name"
+              value={customeRoomName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setCustomeRoomName(e.target.value);
+              }}
+            />
+          )}
+
           <IoIosAdd
             size={16}
             onClick={() => {
-	      if(isCustomeRoomName && !/\S/.test(customeRoomName)) {
-	      	toast.error("Room name should not empty or space")
-		return;
-	      }
+              if (isCustomeRoomName && !/\S/.test(customeRoomName)) {
+                toast.error("Room name should not empty or space");
+                return;
+              }
               createRoom({ socket, customeRoomName, setCustomeRoomName });
             }}
             className="cursor-pointer text-white bg-green-500 rounded mt-2 active:scale-95 transition-all"
           />
         </div>
       )}
-<>
-	<div className="flex items-center justify-between gap-x-2 mt-2">
-	<InputField 
-	  className="p-1 box-border rounded border border-blue-500" type="text"
-	  name="joinTo"
-	  placeholder="Join To"
-	  value={joinTo}
-	  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {setJoinTo(e.target.value)}}
-	/>
-	<Link href={`/room?id=${joinTo}`} className={"bg-blue-500 px-2 py-0.5 rounded text-white active:scale-95 transition-all"}> join </Link>
-	</div>
-</>
+      <>
+        <div className="flex items-center justify-between gap-x-2 mt-2">
+          <InputField
+            className="p-1 box-border rounded border border-blue-500"
+            type="text"
+            name="joinTo"
+            placeholder="Join To"
+            value={joinTo}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setJoinTo(e.target.value);
+            }}
+          />
+          <Link
+            href={`/room?id=${joinTo}`}
+            className={
+              "bg-blue-500 px-2 py-0.5 rounded text-white active:scale-95 transition-all"
+            }
+          >
+            {" "}
+            join{" "}
+          </Link>
+        </div>
+      </>
     </div>
   );
 };
@@ -182,7 +206,7 @@ const ProfileContent = ({ data }: any) => {
 };
 
 const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
-  if(typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
 
   const [inputValue, setInputValue] = React.useState<{
     imageURL: string;
@@ -204,16 +228,14 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
   };
 
   const [rooms, setRooms] = React.useState<Room[]>([]);
-
-  const ipv4 = window.location.hostname;
   
-  const socket = getSocket({ ipv4 });
+  const socket = getSocket();
 
-const handleRoomExists = async(message:string)=>{
-  toast.error(message)
-}
+  const handleRoomExists = async (message: string) => {
+    toast.error(message);
+  };
   React.useEffect(() => {
-    const handleRoomCreated = (roomId:string) => {
+    const handleRoomCreated = (roomId: string) => {
       setRooms((prev) => [...(prev || []), { roomId }]);
     };
 
@@ -221,8 +243,8 @@ const handleRoomExists = async(message:string)=>{
     socket.on("room-exists", handleRoomExists);
 
     return () => {
-     socket.off("room-created", handleRoomCreated);
-     socket.off("room-exists", handleRoomExists);
+      socket.off("room-created", handleRoomCreated);
+      socket.off("room-exists", handleRoomExists);
     };
   }, []);
 
@@ -256,7 +278,6 @@ const handleRoomExists = async(message:string)=>{
       name: "username",
       value: inputValue?.username,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        // toast(e.target.value);
         setInputValue({ ...inputValue, username: e.target.value });
       },
       placeholder: "username",

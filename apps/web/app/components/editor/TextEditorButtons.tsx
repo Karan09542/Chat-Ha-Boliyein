@@ -31,6 +31,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import ErrorMessage from "../comp_utils/message/ErrorMessage";
 import { AtomicBlockUtils, EditorState, Modifier, RichUtils } from "draft-js";
 import { IoMdAdd } from "react-icons/io";
+import { BACKEND_URL } from "../../config";
 
 // import { useIpv4Store} from "@store/index";
 
@@ -132,18 +133,8 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     setEditorState(RichUtils.toggleBlockType(editorState, "blockquote"));
   };
 
- const [baseURL, setBaseURL] = useState<string>("")
-useEffect(function connectSocketInEditorButton(){
-  if(typeof window !=="undefined") {
-  const ipv4 = window.location.hostname
-  const baseURL = `http://${ipv4}:1008`;
-  setBaseURL(baseURL)
-}
-},[])
-  
 
-
-  const accessToken = "सीताराम";
+  // const accessToken = "सीताराम";
   // check fetch in onAddLink
   const onAddLink = async (link: string) => {
     // let link = window.prompt("Add link http:// ");
@@ -155,7 +146,7 @@ useEffect(function connectSocketInEditorButton(){
     }
 
     let anchorName;
-    await fetch(`${baseURL}/fetch-url-title`, {
+    await fetch(`${BACKEND_URL}/fetch-url-title`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

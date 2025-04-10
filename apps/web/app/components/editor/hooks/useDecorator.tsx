@@ -20,13 +20,13 @@ function useDecorator({
   editorState: EditorState;
   setEditorState: (editorState: EditorState) => void;
 }) {
-  const AtTheRate_REGEX = /@[\p{L}\p{M}]+/gu;
+  // const AtTheRate_REGEX = /@[\p{L}\p{M}]+/gu;
   const HASHTAG_REGEX = /#[\p{L}\p{M}]+/gu;
   const Image_REGEX = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|svg|webp))/gi;
   function hashtagStrategy(
     contentBlock: ContentBlock,
     callback: any,
-    contentState: ContentState
+    _contentState: ContentState
   ) {
     findWithRegex(HASHTAG_REGEX, contentBlock, callback);
   }

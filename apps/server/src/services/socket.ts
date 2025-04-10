@@ -1,8 +1,7 @@
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import Redis from "ioredis";
 import { REDIS_URL } from "../config";
-import { nanoid } from "nanoid"
-
+import { nanoid } from "nanoid";
 
 class SocketService {
   private _io: Server;
@@ -27,6 +26,19 @@ class SocketService {
     this.setupRedis();
   }
 
+  roomSession(socket: Socket, roomId: string, username?: string) {
+    // Save in socket session
+    if (!socket.data.roomsJoined) {
+      socket.data.roomsJoined = new Set<string>();
+    }
+    socket.data.roomsJoined.add(roomId);
+
+    if (username) {
+      socket.data.username = username;
+    }
+  }
+  
+
   private async setupRedis() {
     try {
       this.subClient.subscribe("chat-message");
@@ -35,9 +47,12 @@ class SocketService {
 
       this.subClient.subscribe("join-room");
       this.subClient.subscribe("room-left");
+      this.subClient.subscribe("user-offline-from-room");
       this.subClient.subscribe("room-size");
 
       this.subClient.subscribe("feedback");
+      this.subClient.subscribe("room-feedback");
+
 
       console.log("✅ Connected to Redis");
     } catch (error) {
@@ -49,99 +64,147 @@ class SocketService {
     const io = this._io;
 
     io.on("connection", async (socket) => {
-	console.log("socket-id: ", socket.id)
       if (!this._clients.has(socket.id)) {
         this._clients.add(socket.id);
         await this.pubClient.publish("client-total", `${this._clients.size}`);
       }
 
-	const getRoomSize = (roomId:string) => {
-	  const room = io.sockets.adapter.rooms.get(roomId);
-	  const roomSize = room ? room.size : 0;
-	  return roomSize; 
-	}
+      const getRoomSize = (roomId: string) => {
+        const room = io.sockets.adapter.rooms.get(roomId);
+        const roomSize = room ? room.size : 0;
+        return roomSize;
+      };
 
       // create room
       socket.on("create-room", async (roomName) => {
+        if (!roomName) {
+          const roomId = nanoid();
+          socket.join(roomId);
+          socket.emit("room-created", roomId);
+          return;
+        }
 
-	if(!roomName) {
-	  const roomId = nanoid()
-	  socket.join(roomId)
-          socket.emit("room-created", roomId)
-	  return;
-	}
-        
-	const rooms = io.sockets.adapter.rooms;
-	if (rooms.has(roomName)){
-	  socket.emit("room-exists", `Room "${roomName}" already exists` )
-	  return;
-	}
-	socket.join(roomName)
-	socket.emit("room-created", roomName)
-      })
+        const rooms = io.sockets.adapter.rooms;
+        if (rooms.has(roomName)) {
+          socket.emit("room-exists", `Room "${roomName}" already exists`);
+          return;
+        }
+        socket.join(roomName);
+        this.roomSession(socket, roomName);
+        socket.emit("room-created", roomName);
+      });
 
       // join room
       socket.on("join-room", async (roomId, username) => {
-	console.log({roomId, username})
+        if (!roomId) {
+          socket.emit("error", "Invalid room ID to join");
+          return;
+        }
+        const rooms = io.sockets.adapter.rooms;
+        if (!rooms.has(roomId)) {
+          socket.emit("room-!exists", `Room "${roomId}" not exists`);
+          return;
+        }
+        socket.join(roomId);
+        this.roomSession(socket, roomId, username);
+        await this.pubClient.publish(
+          "join-room",
+          JSON.stringify({ roomId, socketId: socket.id, username })
+        );
+      });
 
-	if (!roomId) {
-    	  socket.emit("error", "Invalid room ID to join");
-    	  return;
-  	}
-	const rooms = io.sockets.adapter.rooms;
-	// const roomSize = getRoomSize(roomId)
-	if (!rooms.has(roomId)) {
-	  socket.emit("room-!exists", `Room "${roomId}" not exists` )
-	  return
-	}
-        socket.join(roomId)
-	await this.pubClient.publish("join-room", JSON.stringify({roomId, socketId:socket.id, username}))
+      socket.on("user-offline-from-room", async (roomId:string, username?:string) => {
+	await this.pubClient.publish("user-offline-from-room",JSON.stringify({socketId:socket.id, roomId, username}))
       })
-
 
       // leave room
-      socket.on("leave-room", async (roomId:string,username:string|undefined) => {
-	console.log(`[Server] leave-room fired for: ${username} in ${roomId}`);
+      socket.on(
+        "leave-room",
+        async (roomId: string, username?:string) => {
+          console.log(
+            `[Server] leave-room fired for: ${username} in ${roomId}`
+          );
 
-	if (!roomId) {
-    	  socket.emit("error", "Invalid room ID to leave");
-    	  return;
-  	}
+          if (!roomId) {
+            socket.emit("error", "Invalid room ID to leave");
+            return;
+          }
 
-        socket.leave(roomId)
-	await this.pubClient.publish("room-left", JSON.stringify({roomId, socketId:socket.id, username}))
+          socket.leave(roomId);
+          await this.pubClient.publish(
+            "room-left",
+            JSON.stringify({ roomId, socketId: socket.id, username })
+          );
 
-	setTimeout(async () => {
-	  const roomSize = getRoomSize(roomId);
-	  await this.pubClient.publish("room-size", JSON.stringify({roomSize, roomId}))
-	}, 50)
-	
-	
-      })
-	
+          setTimeout(async () => {
+            const roomSize = getRoomSize(roomId);
+            await this.pubClient.publish(
+              "room-size",
+              JSON.stringify({ roomSize, roomId })
+            );
+          }, 10);
+        }
+      );
 
-      socket.on("get-room-size", async (roomId:string) => {
-	const roomSize = getRoomSize(roomId)
-	await this.pubClient.publish("room-size", JSON.stringify({roomSize, roomId}))
-      })
+      socket.on("get-room-size", async (roomId: string) => {
+        const roomSize = getRoomSize(roomId);
+        await this.pubClient.publish(
+          "room-size",
+          JSON.stringify({ roomSize, roomId })
+        );
+      });
 
       // send message to room
       socket.on("room:message", async ({ roomId, message }) => {
-        await this.pubClient.publish("room-message", JSON.stringify({ message, roomId }));
-      })
+        await this.pubClient.publish(
+          "room-message",
+          JSON.stringify({ message, roomId })
+        );
+      });
 
       // 🔹 Broadcast new message using Redis
       socket.on("event:message", async ({ message }) => {
         await this.pubClient.publish("chat-message", message);
       });
 
-      socket.on("feedback", async (message) => {
-	await this.pubClient.publish("feedback", message);
-      })
+      socket.on("feedback", async (username:string) => {
+        await this.pubClient.publish("feedback", JSON.stringify({socketId:socket.id, username}));
+      });
+
+      socket.on("room-feedback", async (roomId:string, username:string) => {
+	console.log("room-feedback: ", roomId, username)
+        await this.pubClient.publish(
+          "room-feedback",
+          JSON.stringify({socketId:socket.id, roomId, username })
+        );
+      });
 
       socket.on("disconnect", async () => {
         this._clients.delete(socket.id);
         await this.pubClient.publish("client-total", `${this._clients.size}`);
+
+        const rooms = socket.data.roomsJoined;
+
+        if (rooms) {
+          for (const roomId of rooms) {
+            socket.leave(roomId);
+
+            await this.pubClient.publish(
+              "room-left",
+              JSON.stringify({
+                roomId,
+                socketId: socket.id,
+                username: socket.data.username, // Optional
+              })
+            );
+
+            setTimeout(async () => {
+              const roomSize = getRoomSize(roomId);
+              await this.pubClient.publish("room-size", JSON.stringify({ roomSize, roomId }))
+            }, 10)
+
+          }
+        }
       });
     });
 
@@ -150,39 +213,63 @@ class SocketService {
         io.emit("chat-message", message);
       }
       if (channel === "client-total") {
+        console.log(io.engine.clientsCount);
         io.emit("client-total", message);
       }
       if (channel === "room-message") {
-        const msg = JSON.parse(message)
-        io.to(msg.roomId).emit("room-message", msg.message)
+        const msg = JSON.parse(message);
+        io.to(msg.roomId).emit("room-message", msg.message);
       }
 
       if (channel === "join-room") {
-	 const {roomId, username, socketId} = JSON.parse(message)
-	 const user_name = username? `${username} is online` : "1 person joined"
+        const { roomId, username, socketId } = JSON.parse(message);
+        const user_name = username
+          ? `${username} has joined the room`
+          : "Someone joined the room";
 
-	 io.to(roomId).except(socketId).emit("join-room", user_name)
+        io.to(roomId).except(socketId).emit("join-room", user_name);
       }
+
 
       if (channel === "room-left") {
-	 const {roomId, username, socketId} = JSON.parse(message)
-	 const user_name = username? `${username} is offline` : "1 person leaved"
+        const { roomId, username, socketId } = JSON.parse(message);
+        const user_name = username
+          ? `${username} has exited the room`
+          : "Someone has exited the room";
 
-	 io.to(roomId).except(socketId).emit("room-left", user_name)
+        io.to(roomId).except(socketId).emit("room-left", user_name);
       }
-      
+
+      if (channel === "user-offline-from-room") {
+	const { roomId, username, socketId } = JSON.parse(message);
+        const msg = username
+          ? `${username} went offline`
+          : "Someone went offline";
+
+        io.to(roomId).except(socketId).emit("user-offline-from-room", msg);
+      }
+
+
+
       if (channel === "room-size") {
-	const {roomSize, roomId} = JSON.parse(message)
-	io.to(roomId).emit("room-size", roomSize)
+        const { roomSize, roomId } = JSON.parse(message);
+        io.to(roomId).emit("room-size", roomSize);
+      }
+
+      if (channel === "feedback") {
+	const {socketId, username} = JSON.parse(message)
+	console.log("g-username: ", username)
+        io.except(socketId).emit("feedback", username);
       }
       
-      if (channel === "feedback") {
-	io.emit("feedback", message)
-      }	
-
+      if (channel === "room-feedback") {
+	const { socketId, roomId, username } = JSON.parse(message);
+	console.log("r-username: ", username)
+	io.to(roomId).except(socketId).emit("room-feedback", username);
+      }
+	
     });
   }
-
   get io() {
     return this._io;
   }

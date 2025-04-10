@@ -58,6 +58,7 @@ interface FlexibleTextEditorProps {
 
   handleFocus?: (e: React.FocusEvent<HTMLDivElement>) => void
   handleBlur?: (e: React.FocusEvent<HTMLDivElement>) => void
+  ref?: React.RefObject<Editor | null>
 }
 const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   placeholder,
@@ -81,6 +82,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
 
   handleFocus,
   handleBlur,
+  ref
 }) => {
   const toggleOL = () => {
     setEditorState(RichUtils.toggleBlockType(editorState, "ordered-list-item"));
@@ -693,9 +695,11 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     return "not-handled"; // Let other pasted content proceed as normal
   };
 
+
   return (
     <>
       <Editor
+	ref={ref}
         placeholder={isPlaceholder ? placeholder || "Type something..." : ""}
         handleKeyCommand={handleKeyCommand}
         keyBindingFn={keyBindingFn}
