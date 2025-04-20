@@ -4,7 +4,7 @@
   "globalEnv": ["GEMINI_API_KEY"],
   "tasks": {
     "build": {
-      "env": ["GEMINI_API_KEY","REDIS_URL", "NODE_ENV"],	
+      "env": ["GEMINI_API_KEY","REDIS_URL", "NODE_ENV", "DB_URL", "DB_PASSWORD"],	
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
@@ -18,7 +18,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "env": ["GEMINI_API_KEY","REDIS_URL", "NODE_ENV"]
+      "env": ["GEMINI_API_KEY","REDIS_URL", "NODE_ENV", "DB_URL", "DB_PASSWORD"]
     }
   }
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "../../../utils/utils";
 import Tippy from "@tippyjs/react";
@@ -46,11 +46,14 @@ const createRoom = ({
 };
 
 const Rooms = ({ rooms, setRooms, socket }: any) => {
+
+
   const searchParams = useSearchParams();
   const roomId = searchParams.get("id");
   const [joinTo, setJoinTo] = useState<string>("");
   const [isCustomeRoomName, setIsCustomeRoomName] = useState<boolean>(false);
   const [customeRoomName, setCustomeRoomName] = useState<string>("");
+
   return (
     <div>
       <h3 className="text-2xl flex items-center justify-between">
@@ -164,6 +167,7 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
 const ProfileContent = ({ data }: any) => {
   return (
     <div className="max-h-[70vh] overflow-y-auto">
+      
       {data?.map((item: any, index: number) => (
         <div
           key={item?.label || item?.name}
@@ -234,17 +238,17 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
   const handleRoomExists = async (message: string) => {
     toast.error(message);
   };
+  const handleRoomCreated = (roomId:string) => {
+    setRooms((prev) => [...(prev || []), { roomId }]);
+  };
   React.useEffect(() => {
-    const handleRoomCreated = (roomId: string) => {
-      setRooms((prev) => [...(prev || []), { roomId }]);
-    };
-
+    
     socket.on("room-created", handleRoomCreated);
-    socket.on("room-exists", handleRoomExists);
+    socket.on("room-exist", handleRoomExists);
 
     return () => {
       socket.off("room-created", handleRoomCreated);
-      socket.off("room-exists", handleRoomExists);
+      socket.off("room-exist", handleRoomExists);
     };
   }, []);
 
@@ -301,7 +305,7 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
           }
           alt="user image"
           aria-label="Open user menu"
-          className={`w-7 h-7 rounded-full object-cover object-center cursor-pointer`}
+          className={`max-w-7 max-h-7 min-w-7 min-h-7 rounded-full object-cover object-center cursor-pointer`}
         />
       </Tippy>
     </div>

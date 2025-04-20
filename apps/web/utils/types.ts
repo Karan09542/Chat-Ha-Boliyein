@@ -4,3 +4,9 @@ export type MessageData = {
   image?: string;
   isOwnMessage?: boolean;
 };
+
+export type Media = {
+  _id:string;
+  url:string;
+  // tags:string[];
+}

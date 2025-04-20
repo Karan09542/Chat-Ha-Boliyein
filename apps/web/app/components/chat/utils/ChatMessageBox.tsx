@@ -81,7 +81,7 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
         {options.map((option, i) => {
           const { svg: Svg, onClick, className } = option;
           return (
-            <div className="p-1">
+            <div key={`dot-${i}`} className="p-1">
               <Svg
                 key={`dot-option-${i}`}
                 onClick={() => {
@@ -109,7 +109,7 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
         return (
           <li
             className={cn(
-              "flex gap-x-2 mb-1 [&_[data-user-icon]]:cursor-pointer [&_[data-user-icon]]:select-none ",
+              "flex gap-x-2 mb-1 [&_[data-user-icon]]:cursor-pointer [&_[data-user-icon]]:select-none",
               msg?.isOwnMessage && "flex-row-reverse"
             )}
             key={`${msg?.username?.slice(0, 10)}-${i}`}
@@ -152,7 +152,7 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
                   refs.current[i] = el;
                 }}
                 dangerouslySetInnerHTML={{ __html: msg?.message || "" }}
-                className="content pt-4"
+                className="content max-w-md pt-4"
               />
               <Tippy
                 content={

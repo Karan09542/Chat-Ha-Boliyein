@@ -2,6 +2,7 @@
 
 import { Socket } from "socket.io-client";
 import { create } from "zustand";
+import { Media } from "../utils/types";
 
 interface ISocketState {
   sendMessage?: (message: string) => any;
@@ -29,6 +30,29 @@ interface IBaseURLStoreState {
 interface IIPv4StoreState {
   ipv4: string;
   setIpv4: (ipv4: string) => void;
+}
+
+type SearchEmoji = {
+  emoji:string;
+  sticker:string;
+  gif:string;
+}
+
+interface EmojiStore {
+  searchEmoji: SearchEmoji;
+  setSearchEmoji: (value: Partial<SearchEmoji>) => void;
+
+  stickers: Media[];
+  setStickers: (data: Media[]) => void;
+
+  gifs: Media[];
+  setGifs: (data: Media[]) => void;
+
+  activeTab: "emoji" | "sticker" | "gif";
+  setActiveTab: (activeTab: "emoji" | "sticker" | "gif") => void;
+
+  cache: Record<string, Media[]>;
+  setCache: (query: string, data: Media[]) => void;
 }
 
 export const useSocketStore = create<ISocketState>((set, get) => ({
@@ -80,3 +104,22 @@ export const useIpv4Store = create<IIPv4StoreState>((set)=>({
   ipv4: "",
   setIpv4: (ipv4) => set({ipv4})
 }))
+
+export const useEmojiStore = create<EmojiStore>((set, get) => ({
+  searchEmoji: {emoji:"", sticker:"", gif:""},
+  setSearchEmoji: (newSearchEmoji) => set(state => ({ searchEmoji: { ...state.searchEmoji, ...newSearchEmoji } })),
+
+  stickers: [],
+  setStickers: (data) => set({ stickers: data }),
+
+  gifs: [],
+  setGifs: (data) => set({ gifs: data }),
+	
+  activeTab: "emoji",
+  setActiveTab: (activeTab) => set({ activeTab }),  
+
+  cache: {},
+  setCache: (query, data) => set((state) => ({
+    cache: { ...state.cache, [query]: data }
+  }))
+}));

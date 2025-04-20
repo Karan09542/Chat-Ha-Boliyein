@@ -12,6 +12,10 @@ import {
   getDefaultKeyBinding,
   Modifier,
   RichUtils,
+  SelectionState,
+  genKey,
+  ContentState, 
+  convertToRaw
 } from "draft-js";
 import "draft-js/dist/Draft.css";
 import immutable from "immutable";
@@ -22,6 +26,7 @@ import {
 } from "../../../utils/draft_utils";
 import { decorateUsername } from "../../../utils/utils";
 import MediaComponent from "../comp_utils/draft/MediaComponent";
+import { List } from 'immutable';
 
 type MensionUser = { _id: string; name: string; avatar: string; role: string };
 interface FlexibleTextEditorProps {
@@ -164,15 +169,16 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   // Handle custom commands in handleKeyCommand
   const getCurrentBlockType = () => {
     const selection = editorState.getSelection();
+        if (!selection || selection.isCollapsed()) return;
     const contentState = editorState.getCurrentContent();
-    const blockKey = selection.getStartKey();
-    const block = contentState.getBlockForKey(blockKey);
+    const blockKey = selection?.getStartKey();
+    const block = contentState?.getBlockForKey(blockKey);
     return block?.getType(); // Returns the type of the current block
   };
 
   // const hasInlineStyleOf = (editorState: EditorState, style: string) => {
   //   const currentStyle = editorState.getCurrentInlineStyle();
-  //   return currentStyle.has(style);
+  //   return currentStyle?.has(style);
   // };
 
   // const isH1 = () => getCurrentBlockType() === "header-one";
@@ -361,19 +367,54 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       )?.offsetLeft,
     });
   };
+
+  const [isComposing, setIsComposing] = React.useState(false);
+
+/* const handleCompositionStart = () => {
+  // console.log("start")
+   const cs = editorState.getCurrentContent()
+   // const em = cs.getEntityMap()
+console.log("cs ", convertToRaw(cs))
+  setIsComposing(true);
+};
+
+const handleCompositionEnd = () => {
+  console.log("end")
+  setIsComposing(false);
+  // Perform actions that were deferred during composition
+  // For example, trigger suggestion selection if necessary
+};
+React.useEffect(() => {
+  if(!ref?.current) return;
+  const node = ref?.current?.editor;
+  if (node) {
+    node.addEventListener('compositionstart', handleCompositionStart);
+    node.addEventListener('compositionend', handleCompositionEnd);
+  }
+
+  return () => {
+    if (node) {
+      node.removeEventListener('compositionstart', handleCompositionStart);
+      node.removeEventListener('compositionend', handleCompositionEnd);
+    }
+  };
+}, []); */
   const handleEditorChange = (newEditorState: EditorState) => {
+    // console.log("entityMap ", newEditorState.getCurrentContent()?.entityMap?.getLastCreatedEntityKey())
     setEditorState(newEditorState);
     const plainText = newEditorState.getCurrentContent().getPlainText();
-
-    if (/\S/.test(plainText)) {
-      setIsPostContent(true);
-    } else {
-      setIsPostContent(false);
-    }
+    setIsPostContent(/\S/.test(plainText))
+const cs = editorState.getCurrentContent()
+console.log("handleEcs ", convertToRaw(cs))
+    console.log("working")
+    if(isComposing) return;
+    console.log("working after")
 
     const selection = newEditorState.getSelection();
     const anchorKey = selection.getAnchorKey();
     const block = newEditorState.getCurrentContent().getBlockForKey(anchorKey);
+    // if(!block ||block.getType() === 'atomic') return;
+
     const blockText = block.getText();
     const cursorPosition = selection.getStartOffset();
 
@@ -388,8 +429,13 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       setMensionInput && setMensionInput(mensionInput);
 
       setPopoverVisible(true);
-
-      const elementAtCursor = getElementAtCursor();
+	
+           try{
+	const elementAtCursor = getElementAtCursor();
+     } catch(error) {
+	console.warn("Failed to get element at cursor:", error)
+     }	
+      
     } else setPopoverVisible(false);
   };
   const handleSelectSuggestion = (suggestion: MensionUser) => {
@@ -505,9 +551,13 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     if (entityType) {
       switch (entityType) {
         case "IMAGE":
+	case "IFRAME":
+	case "VIDEO":
+	case "AUDIO":
+	case "FILE":
           return {
             component: MediaComponent,
-            editable: true,
+            editable: false,
             props: {
               onRemove: (blockKey: string) => {
                 const newEditorState = removeAtomicBlock(editorState, blockKey);
@@ -515,54 +565,6 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
               },
             },
           };
-        case "IFRAME":
-          return {
-            component: MediaComponent,
-            editable: true,
-            props: {
-              onRemove: (blockKey: string) => {
-                const newEditorState = removeAtomicBlock(editorState, blockKey);
-                setEditorState(newEditorState);
-              },
-            },
-          };
-        case "VIDEO": {
-          return {
-            component: MediaComponent,
-            editable: true,
-            props: {
-              onRemove: (blockKey: string) => {
-                const newEditorState = removeAtomicBlock(editorState, blockKey);
-                setEditorState(newEditorState);
-              },
-            },
-          };
-        }
-        case "AUDIO": {
-          return {
-            component: MediaComponent,
-            editable: true,
-            props: {
-              onRemove: (blockKey: string) => {
-                const newEditorState = removeAtomicBlock(editorState, blockKey);
-                setEditorState(newEditorState);
-              },
-            },
-          };
-        }
-        case "FILE": {
-          return {
-            component: MediaComponent,
-            editable: true,
-            props: {
-              onRemove: (blockKey: string) => {
-                const newEditorState = removeAtomicBlock(editorState, blockKey);
-                setEditorState(newEditorState);
-              },
-            },
-          };
-        }
-
         default:
           return null;
       }
@@ -696,6 +698,274 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   };
 
 
+function safelyExitAtomicBlock(editorState: EditorState): EditorState | null {
+  const selection = editorState.getSelection();
+  const contentState = editorState.getCurrentContent();
+  const blockKey = selection.getStartKey();
+  const block = contentState.getBlockForKey(blockKey);
+
+  if (block.getType() !== 'atomic') return null;
+
+  const newBlockKey = genKey();
+  const blockMap = contentState.getBlockMap();
+  const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
+  const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
+
+const isAtStart = selection.isCollapsed() && selection.getStartOffset() === 0;
+if (!isAtStart) {
+  return null;
+}
+
+  const newBlock = new ContentBlock({
+    key: newBlockKey,
+    type: 'unstyled',
+    text: '',
+    characterList: List(),
+  });
+
+  const newBlockMap = blocksBefore
+    .concat([[blockKey, block], [newBlockKey, newBlock]])
+    .concat(blocksAfter)
+    .toOrderedMap();
+
+  const newContentState = contentState.merge({
+    blockMap: newBlockMap,
+    selectionAfter: selection,
+  }) as typeof contentState;
+
+  const newSelection = SelectionState.createEmpty(newBlockKey);
+  const newEditorState = EditorState.push(editorState, newContentState, 'split-block');
+
+  return EditorState.forceSelection(newEditorState, newSelection);
+}
+
+
+
+// function handleBeforeInput(chars: string, editorState:EditorState, _eventTimeStamp: number, { setEditorState }: { setEditorState: (editorState: EditorState) => void }) {
+//   const selection = editorState.getSelection();
+//   const contentState = editorState.getCurrentContent();
+//   const blockKey = selection.getStartKey();
+//   const block = contentState.getBlockForKey(blockKey);
+
+//   if (block.getType() === 'atomic') {
+//     // नया empty block बनाओ manually (unstyled type)
+// //     const newBlockKey = genKey();
+// //     const blockMap = contentState.getBlockMap();
+// //     const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
+// //     const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
+
+// //     const newBlock = new ContentBlock({
+// //       key: newBlockKey,
+// //       type: 'unstyled',
+// //       text: '',
+// //       characterList: List(),
+// //     });
+
+// //     // const newBlockMap = blocksBefore.concat([[blockKey, block], [newBlockKey, newBlock]], blocksAfter).toOrderedMap();
+
+// // /* const newBlockMap = blocksBefore
+// //   .concat([[newBlockKey, newBlock]])
+// //   .concat(blocksAfter)
+// //   .toOrderedMap();
+// //     const newContentState = contentState.merge({
+// //       blockMap: newBlockMap,
+// //       selectionAfter: selection,
+// //     }); */
+
+// //   const newBlockMap = blocksBefore
+// //   .concat([[blockKey, block], [newBlockKey, newBlock]]) // 👈 this is safer
+// //   .concat(blocksAfter)
+// //   .toOrderedMap();
+
+// //    // 🛠 यह missing था:
+// //    const newContentState = contentState.merge({
+// //     blockMap: newBlockMap,
+// //     selectionAfter: selection,
+// //   }) as ContentState;
+
+// //     const newSelection = SelectionState.createEmpty(newBlockKey);
+// //     const newEditorState = EditorState.push(editorState, newContentState as ContentState, 'split-block');
+// //     const finalEditorState = EditorState.forceSelection(newEditorState, newSelection);
+
+// //     setEditorState(finalEditorState);
+//     return 'handled';
+//   }
+
+//   return 'not-handled';
+// }
+
+// function handleBeforeInput(
+//   chars: string,
+//   editorState: EditorState,
+//   _eventTimeStamp: number,
+//   { setEditorState }: { setEditorState: (editorState: EditorState) => void }
+// ) {
+//   const selection = editorState.getSelection();
+//   const contentState = editorState.getCurrentContent();
+//   const blockKey = selection.getStartKey();
+//   const block = contentState.getBlockForKey(blockKey);
+// console.log({chars})
+//   if (block.getType() === 'atomic') {
+//     // ✅ Ignore during composition
+//     if (isComposingRef.current) return 'not-handled';
+
+//     const newBlockKey = genKey();
+//     const blockMap = contentState.getBlockMap();
+//     const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
+//     const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
+
+//     const newBlock = new ContentBlock({
+//       key: newBlockKey,
+//       type: 'unstyled',
+//       text: '',
+//       characterList: List(),
+//     });
+
+//     const newBlockMap = blocksBefore
+//       .concat([[blockKey, block], [newBlockKey, newBlock]])
+//       .concat(blocksAfter)
+//       .toOrderedMap();
+
+//     const newContentState = contentState.merge({
+//       blockMap: newBlockMap,
+//       selectionAfter: selection,
+//     }) as ContentState;
+
+//     const newSelection = SelectionState.createEmpty(newBlockKey);
+//     const newEditorState = EditorState.push(editorState, newContentState, 'split-block');
+//     const finalEditorState = EditorState.forceSelection(newEditorState, newSelection);
+
+//     setEditorState(finalEditorState);
+//     return 'handled';
+//   }
+
+//   return 'not-handled';
+// }
+
+// const isComposingRef = React.useRef(false);
+// const atomicBlocksRef = React.useRef(new Map());
+
+// React.useEffect(() => {
+//   const domNode = ref?.current?.editor;
+//   if (!domNode) return;
+
+//   const handleCompositionStart = () => {
+//     console.log("composition start");
+//     isComposingRef.current = true;
+
+//     const atomicBlocks = new Map();
+//     const contentState = editorState.getCurrentContent();
+
+//     contentState.getBlockMap().forEach((block) => {
+//       if (block.getType() === 'atomic') {
+//         atomicBlocks.set(block.getKey(), block);
+//       }
+//     });
+
+//     atomicBlocksRef.current = atomicBlocks;
+//   };
+
+//   const handleCompositionEnd = () => {
+//     console.log("composition end");
+//     isComposingRef.current = false;
+
+//     const contentState = editorState.getCurrentContent();
+//     let blockMap = contentState.getBlockMap();
+//     let didRestore = false;
+
+//     atomicBlocksRef.current.forEach((block, key) => {
+//       if (!blockMap.has(key)) {
+//         blockMap = blockMap.set(key, block);
+//         didRestore = true;
+//       }
+//     });
+
+//     if (didRestore) {
+//       const newContentState = contentState.merge({ blockMap }) as ContentState;
+
+//       const newEditorState = EditorState.push(
+//         editorState,
+//         newContentState,
+//         'change-block-data'
+//       );
+
+//       // Force selection reset to avoid ghost cursor
+//       const selection = newEditorState.getSelection();
+//       const forcedEditorState = EditorState.forceSelection(newEditorState, selection);
+
+//       setEditorState(forcedEditorState);
+//     }
+//   };
+
+//   domNode.addEventListener("compositionstart", handleCompositionStart);
+//   domNode.addEventListener("compositionend", handleCompositionEnd);
+
+//   return () => {
+//     domNode.removeEventListener("compositionstart", handleCompositionStart);
+//     domNode.removeEventListener("compositionend", handleCompositionEnd);
+//   };
+// }, [editorState]);
+
+// React.useEffect(() => {
+//   if(!ref?.current) return
+//   const editorDOM = ref.current?.editor;
+
+//   if (!editorDOM) {
+//     console.warn("Editor DOM not found");
+//     return;
+//   }
+
+//   const handleCompositionStart = () => {
+//     console.log("🟡 Composition Started (IME typing started)");
+//   };
+
+//   const handleCompositionUpdate = (e: any) => {
+//     console.log("✏️ IME intermediate value:", e.data);
+//   };
+
+//   const handleCompositionEnd = (e: any) => {
+//     console.log("🟢 Composition Ended. Final value:", e.data);
+//     // Optional: manually update editorState if needed
+//   };
+
+//   editorDOM.addEventListener("compositionstart", handleCompositionStart);
+//   editorDOM.addEventListener("compositionupdate", handleCompositionUpdate);
+//   editorDOM.addEventListener("compositionend", handleCompositionEnd);
+
+//   return () => {
+//     editorDOM.removeEventListener("compositionstart", handleCompositionStart);
+//     editorDOM.removeEventListener("compositionupdate", handleCompositionUpdate);
+//     editorDOM.removeEventListener("compositionend", handleCompositionEnd);
+//   };
+// }, []);
+
+
+React.useEffect(() => {
+    const contentDiv = document.querySelector(".public-DraftEditor-content");
+
+    const handleCompositionStart = () => {
+      console.log("Composition started");
+      setIsComposing(true);
+    };
+
+    const handleCompositionEnd = () => {
+      console.log("Composition ended");
+      setIsComposing(false);
+    };
+
+    if (contentDiv) {
+      contentDiv.addEventListener("compositionstart", handleCompositionStart);
+      contentDiv.addEventListener("compositionend", handleCompositionEnd);
+    }
+
+    return () => {
+      if (contentDiv) {
+        contentDiv.removeEventListener("compositionstart", handleCompositionStart);
+        contentDiv.removeEventListener("compositionend", handleCompositionEnd);
+      }
+    };
+  }, [ref]);
+
   return (
     <>
       <Editor
@@ -712,6 +982,25 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         handlePastedFiles={handlePastedFiles}
 	onFocus={handleFocus}
 	onBlur={handleBlur}
+	// handleBeforeInput={(...args) => handleBeforeInput(...args, { setEditorState })}
+
+/* onCompositionStart={() => {
+  setTimeout(() => {
+    const newState = safelyExitAtomicBlock(editorState);
+    if (newState) {
+      setEditorState(newState);
+    }
+  }, 0);
+}} */
+  // handleBeforeInput={(chars: string, editorState: EditorState, _eventTimeStamp: number, { setEditorState }: { setEditorState: (editorState: EditorState) => void }) => {
+  //    if (!setEditorState) return
+  //   const newState = safelyExitAtomicBlock(editorState);
+  //   if (newState) {
+  //     setEditorState(newState);
+  //     return 'handled';
+  //   }
+  //   return 'not-handled';
+  // }}
       />
       {isPopoverVisible && (
         <MentionPopover

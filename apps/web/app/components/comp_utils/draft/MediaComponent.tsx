@@ -12,8 +12,12 @@ function MediaComponent({
   contentState: any;
   block: any;
 }) {
+
+  const entityKey = block.getEntityAt(0)
+  if (!entityKey) return null;
+
   const entity = contentState?.getEntity(block.getEntityAt(0));
-  const { src, name } = entity.getData();
+  const { src, name, className } = entity.getData();
   const blockKey = block.getKey();
   const GetMediaTag = () => {
     const mediaType = entity?.type;
@@ -39,7 +43,8 @@ function MediaComponent({
           <img
             src={src}
             alt={"image"}
-            style={{ width: "100%", height: "100%" }}
+            // style={{ width: "100%", height: "100%" }}
+	    className={`${className}`}
           />
         );
       }
@@ -85,7 +90,7 @@ function MediaComponent({
         );
       }
       default:
-        null;
+        return null;
     }
   };
   return (
@@ -115,4 +120,4 @@ function MediaComponent({
   );
 }
 
-export default MediaComponent;
+export default React.memo(MediaComponent);

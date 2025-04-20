@@ -31,10 +31,14 @@ import { useFieldArray, useForm } from "react-hook-form";
 import ErrorMessage from "../comp_utils/message/ErrorMessage";
 import { AtomicBlockUtils, EditorState, Modifier, RichUtils } from "draft-js";
 import { IoMdAdd } from "react-icons/io";
+
+import { cn } from "../../../utils/utils";
+import Tippy from "@tippyjs/react";
+import { Media } from "../../../utils/types";
+import EmojiContainer from "../comp_utils/emoji/EmojiContainer";
 import { BACKEND_URL } from "../../config";
 
 // import { useIpv4Store} from "@store/index";
-
 
 interface TextEditorButtonsProps {
   editorState: EditorState;
@@ -72,9 +76,16 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
   isPostButton = true,
   className,
 }) => {
-
   const [isImageInput, setIsImageInput] = useState(false);
   const [isImageUrlInput, setIsImageUrlInput] = useState(false);
+  const [isEmoji, setIsEmoji] = useState<boolean>(false);
+  const emojiContainerRef = useRef<HTMLDivElement>(null);
+
+  outSideClose({
+    setState: setIsEmoji,
+    ref: emojiContainerRef,
+    arg: false,
+  })
 
   const richButtonContainerRef = useRef<HTMLDivElement>(null);
   const isDown = useRef(false);
@@ -132,7 +143,6 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
   const toggleBlockquote = () => {
     setEditorState(RichUtils.toggleBlockType(editorState, "blockquote"));
   };
-
 
   // const accessToken = "सीताराम";
   // check fetch in onAddLink
@@ -220,10 +230,55 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     const block = contentState.getBlockForKey(blockKey);
     return block?.getType(); // Returns the type of the current block
   };
+
+
+  /* const hasInlineStyleOf = (editorState: EditorState, style: string) => {
+     const currentStyle = editorState?.getCurrentInlineStyle?.();
+     return currentStyle?.has(style);
+   }; */
+
+  /* const hasInlineStyleOf = (style: string) => {
+    try {
+      const selection = editorState.getSelection();
+      if (!selection || selection.isCollapsed()) return false;
+  
+      return editorState.getCurrentInlineStyle().has(style);
+    } catch (err) {
+      console.error("Error checking inline style:", err);
+      return false;
+    }
+  }; */
+
   const hasInlineStyleOf = (editorState: EditorState, style: string) => {
-    const currentStyle = editorState?.getCurrentInlineStyle?.();
-    return currentStyle?.has(style);
+    try {
+      const selection = editorState.getSelection();
+      const content = editorState.getCurrentContent();
+
+      if (!selection || selection.isCollapsed()) return false;
+
+      const startKey = selection.getStartKey();
+      const endKey = selection.getEndKey();
+
+      const startBlock = content.getBlockForKey(startKey);
+      const endBlock = content.getBlockForKey(endKey);
+
+      // अगर block में कुछ issue है (e.g. undefined, deleted etc.)
+      if (!startBlock || !endBlock) return false;
+
+      // block length भी validate करो ताकि getLength call crash न करे
+      if (startBlock.getLength() < selection.getStartOffset()) return false;
+      if (endBlock.getLength() < selection.getEndOffset()) return false;
+
+      // safe to use now
+      return editorState.getCurrentInlineStyle().has(style);
+    } catch (err) {
+      console.error("Error checking inline style:", err);
+      return false;
+    }
   };
+
+
+
   // Example usage to determine the block type
   const isH1 = () => getCurrentBlockType() === "header-one";
   const isOL = () => getCurrentBlockType() === "ordered-list-item";
@@ -461,17 +516,15 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         return (
           <span
             key={button.title}
-            className={`p-[0.2rem] w-fit rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${
-              button?.checker?.(editorState) &&
+            className={`p-[0.2rem] w-fit rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${button?.checker?.(editorState) &&
               !["Nested Item", "UnNested Item"].includes(button.title)
-                ? "border"
-                : "border-transparent border"
-            } ${
-              ["Nested Item", "UnNested Item"].includes(button.title) &&
-              !(isOL() || isUL())
+              ? "border"
+              : "border-transparent border"
+              } ${["Nested Item", "UnNested Item"].includes(button.title) &&
+                !(isOL() || isUL())
                 ? "hidden"
                 : ""
-            } 
+              } 
                 ${button.title === "Backward" && !isUndo ? "opacity-30" : ""} 
                 ${button.title === "Forward" && !isRedo ? "opacity-30" : ""} 
                 `}
@@ -489,12 +542,11 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
             }}
           >
             <ButtonSvg
-              className={`${
-                button?.checker?.(editorState) &&
+              className={`${button?.checker?.(editorState) &&
                 !["Nested Item", "UnNested Item"].includes(button.title)
-                  ? "[&>path]:fill-[#2563eb]"
-                  : ""
-              }`}
+                ? "[&>path]:fill-[#2563eb]"
+                : ""
+                }`}
             />
           </span>
         );
@@ -502,16 +554,14 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         return (
           <button
             key={button.title}
-            className={`p-[0.2rem] rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${
-              button?.checker?.(editorState)
-                ? "border"
-                : "border-transparent border"
-            } ${
-              button?.checker?.(editorState) &&
-              !["Nested Item", "UnNested Item"].includes(button.title)
+            className={`p-[0.2rem] rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${button?.checker?.(editorState)
+              ? "border"
+              : "border-transparent border"
+              } ${button?.checker?.(editorState) &&
+                !["Nested Item", "UnNested Item"].includes(button.title)
                 ? "[&>path]:fill-[#2563eb]"
                 : ""
-            }`}
+              }`}
             onMouseDown={(e) => {
               e.preventDefault();
               button?.handler?.(editorState, setEditorState);
@@ -588,25 +638,42 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     setIsImageInput(false);
     setIsImageUrlInput(false);
   }
-  const insertImage = (editorState: EditorState, url: string) => {
+  const insertImage = (editorState: EditorState, url: string, className: string = "image") => {
     const contentState = editorState.getCurrentContent();
     const contentStateWithEntity = contentState.createEntity(
       "IMAGE",
       "IMMUTABLE",
-      { src: url }
+      { src: url, className }
     );
     const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-    const newEditorState = EditorState.set(editorState, {
-      currentContent: contentStateWithEntity,
-    });
-    return {
-      newEditorState: AtomicBlockUtils.insertAtomicBlock(
-        newEditorState,
-        entityKey,
-        " "
-      ),
+
+    const newEditorState = EditorState.push(
+      editorState,
+      contentStateWithEntity,
+      "apply-entity"
+    );
+
+    // 4. insert atomic block
+    const finalEditorState = AtomicBlockUtils.insertAtomicBlock(
+      newEditorState,
       entityKey,
-    };
+      " "
+    );
+
+    /*
+        const newEditorState = EditorState.set(editorState, {
+          currentContent: contentStateWithEntity,
+        });
+        return {
+          newEditorState: AtomicBlockUtils.insertAtomicBlock(
+            newEditorState,
+            entityKey,
+            " "
+          ),
+          entityKey,
+        }; */
+
+    return { newEditorState: finalEditorState, entityKey };
   };
 
   const handleToggleAtSymbol = () => {
@@ -682,13 +749,33 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     }
   };
 
+  const handleInsertCharacter = (character: string) => {
+    const selection = editorState.getSelection();
+    const contentState = editorState.getCurrentContent();
+    const newContentState = Modifier.insertText(
+      contentState,
+      selection,
+      character
+    );
+    const newEditorState = EditorState.push(
+      editorState,
+      newContentState,
+      "insert-characters"
+    );
+    setEditorState(newEditorState);
+  }
+
+
+
+
+
   return (
     <div>
       {/* absolute bottom-0 w-full px-2 py-3 bg-gray-100  */}
+      {isEmoji && <EmojiContainer setIsEmoji={setIsEmoji} editorState={editorState} setEditorState={setEditorState} handleInsertCharacter={handleInsertCharacter} insertImage={insertImage} />}
       <div
-        className={`flex ${isLinkInput ? "items-center" : ""} gap-x-5 ${
-          isPostButton ? "p-2 h-16" : "px-2 h-10"
-        } ${className} `}
+        className={`flex ${isLinkInput ? "items-center" : ""} gap-x-5 ${isPostButton ? "p-2 h-16" : "px-2 h-10"
+          } ${className} `}
       >
         {isLinkInput && (
           <div
@@ -724,11 +811,10 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
               <span
                 aria-label="cancel"
                 role="button"
-                className={`${
-                  url
-                    ? "border-blue-500 text-blue-500 hover:bg-blue-200/40 "
-                    : "text-gray-500 hover:bg-gray-200/40"
-                } border  px-3.5 py-1 rounded-full  font-semibold  active:opacity-80 cursor-pointer select-none `}
+                className={`${url
+                  ? "border-blue-500 text-blue-500 hover:bg-blue-200/40 "
+                  : "text-gray-500 hover:bg-gray-200/40"
+                  } border  px-3.5 py-1 rounded-full  font-semibold  active:opacity-80 cursor-pointer select-none `}
                 onClick={() => {
                   setIsLinkInput(false);
                   if (url) {
@@ -775,6 +861,12 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
                   <Image />
                 </div>
               </div>
+              <div
+                className="relative"
+                onClick={() => setIsEmoji((prev) => !prev)}
+              >
+                😊
+              </div>
             </div>
             <div className="absolute top-full flex items-center w-full h-full gap-2 cursor-pointer">
               {/* unFormatting button */}
@@ -810,9 +902,8 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         )}
         {isImageInput && (
           <div
-            className={`absolute z-10  px-2 py-1 dark:bg-white bg-black text-white dark:text-black border border-[#e0e0e0] rounded ${
-              isImageUrlInput ? "bottom-1  right-1 " : "-top-4 left-20"
-            }  `}
+            className={`absolute z-10  px-2 py-1 dark:bg-white bg-black text-white dark:text-black border border-[#e0e0e0] rounded ${isImageUrlInput ? "bottom-1  right-1 " : "-top-4 left-20"
+              }  `}
           >
             {!isImageUrlInput && (
               <div className="flex items-center gap-2 ">
@@ -886,11 +977,11 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
                             `images.${index}`,
                             index === 0
                               ? {
-                                  required: {
-                                    value: true,
-                                    message: "At least one image is required",
-                                  },
-                                }
+                                required: {
+                                  value: true,
+                                  message: "At least one image is required",
+                                },
+                              }
                               : {}
                           )}
                         />

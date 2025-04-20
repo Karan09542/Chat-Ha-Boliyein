@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import ChatInput from "./utils/ChatInput";
-import { cn } from "../../../utils/utils";
+import { cn, isPermission, mainNotification } from "../../../utils/utils";
 import { MessageData } from "../../../utils/types";
 import { useTotalClientsStore, useWhoTypingStore } from "@store/index";
 import { getSocket } from "../../../utils/socket";
@@ -19,12 +19,22 @@ interface ChatBoxProps {
   className?: string;
 }
 
-const socket = getSocket();
+const getNotificationMessage = (senderUsername:string): string => {
+  const messagesOption = [
+    `🔔 ${senderUsername} जी ने आपको भक्ति से भरा एक संदेश भेजा है। कृपया दर्शन करें।`,
+    `🌸 भक्त ${senderUsername} की भावना आपके चरणों में पहुँची है। एक संदेश आपका इंतज़ार कर रहा है।`,
+    `🔱 हर हर महादेव! ${senderUsername} जी ने अपनी श्रद्धा से आपको संदेश भेजा है।`,
+    `🕊️ ${senderUsername} जी ने ध्यान और प्रेम के साथ एक संदेश भेजा है। ह्रदय से स्वीकार करें।`,
+    `📿 राधे राधे! ${senderUsername} जी का एक भक्तिमय संदेश आपके लिए आया है।`,
+    `🙏 ${senderUsername} जी ने आपके साथ अपनी भक्ति बाँटी है, एक संदेश के रूप में।`,
+  ];
+  return messagesOption[Math.floor(Math.random() * messagesOption.length)] as string;
+}
 
+const socket = getSocket();
 const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<MessageData[]>([]);
-
   const pathname = usePathname()
 
   const setTotalClients = useTotalClientsStore(
@@ -42,7 +52,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
   };
   const handleChatMessage = async (message: string) => {
     const parsedMessage = JSON.parse(message);
-    // await mainNotifcation("जयश्रीमननारायण");
+    if(document.visibilityState === "hidden"){
+      const username = parsedMessage?.username || "भक्त"
+      await mainNotification(getNotificationMessage(username));
+    }
 
     setMessages((prev) => {
       const isDuplicate = prev.some(
@@ -55,6 +68,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
         : [...prev, { ...parsedMessage, isOwnMessage: false }];
     });
   };
+  useEffect(()=>{
+    async function getNotificationPermission(){
+      await isPermission()
+    }
+    getNotificationPermission()
+   },[])
 
   useEffect(() => {
     if (!socket) return;
@@ -93,6 +112,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
       setMessage("");
     }
   };
+
+  
 
   return (
     <div

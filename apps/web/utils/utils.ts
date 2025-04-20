@@ -54,38 +54,44 @@ export const handleCopy = ({index, refs,text}:{index?: number, refs?:RefObject<(
 //   });
 // };
 
-// export const checkPermission = () => {
-//   if (typeof window === "undefined") return;
-//   if (!("serviceWorker" in navigator)) {
-//     throw new Error("Service worker is not supported in this browser.");
-//   }
-//   if (!("Notification" in window))
-//     throw new Error("Notification is not supported in this browser.");
-// };
+export const checkPermission = () => {
+  if (typeof window === "undefined") return;
+  if (!("serviceWorker" in navigator)) {
+    throw new Error("Service worker is not supported in this browser.");
+  }
+  if (!("Notification" in window)) {
+    throw new Error("Notification is not supported in this browser.");
+  }
+};
 
-// export const registerSw = async () => {
-//   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-//   const registration = await navigator.serviceWorker.register("/sw.js");
-//   return registration;
-// };
+export const registerSw = async () => {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  const registration = await navigator.serviceWorker.register("/sw.js");
+  return registration;
+};
 
-// export const requestNotificationPermission = async (message: string) => {
-//   checkPermission();
-//   const permission = await Notification.requestPermission();
-//   if (permission !== "granted") {
-//     throw new Error("Notification permission not granted");
-//   } else {
-//     new Notification(message);
-//   }
-// };
+export const isPermission = async () => {
+ if (Notification.permission !== "granted") {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      throw new Error("Notification permission not granted");
+    }
+  }
+}
 
-// export const mainNotifcation = async (message: string) => {
-//   checkPermission();
-//   const reg = await registerSw();
-
-//   if (reg?.active) {
-//     reg.active.postMessage({ type: "SHOW_NOTIFICATION", message });
-//   } else {
-//     throw new Error("Service worker is not active");
-//   }
-// };
+export const mainNotification = async (message: string) => {
+  try {
+    checkPermission();
+    await isPermission()
+  
+    const reg = await registerSw();
+    const readyReg = await navigator.serviceWorker.ready;
+    if (readyReg?.active) {
+      readyReg.active.postMessage({ type: "SHOW_NOTIFICATION", message });
+    } else {
+      throw new Error("Service worker is not active");
+    }
+  } catch (error) {
+    console.error("Notification error:", error);
+  }
+};

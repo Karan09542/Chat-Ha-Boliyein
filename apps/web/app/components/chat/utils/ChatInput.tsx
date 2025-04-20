@@ -113,22 +113,35 @@ const ChatInput: React.FC<ChatInputProps> = ({
     entityMap: {},
     blocks: [],
   };
-
-  const [editorState, setEditorState] = useState(
-    EditorState.createWithContent(convertFromRaw(initialRawContent))
+  
+  const compositeDecorator = useDecorator({isFootnote})
+   const [editorState, setEditorState] = useState(
+        EditorState.set(
+      EditorState.createWithContent(convertFromRaw(initialRawContent)),
+      { decorator: compositeDecorator }
+    )
+    
   );
 
-  const compositeDecorator = useDecorator({
+ /* const compositeDecorator = React.useMemo(() => useDecorator({
     isFootnote,
     editorState,
     setEditorState,
-  });
+  }), [editorState, isFootnote]); */
 
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const roomId = searchParams.get("id")
-
+const editorRef = React.useRef<Editor | null>(null)
   const handleFocus = (e?: React.FocusEvent<HTMLDivElement>) => {
+    // toast("ram")
+// toast(document.body.scrollHeight)
+  setTimeout(() => {
+    editorRef.current?.editor?.scrollIntoView({
+      // behavior: "smooth",
+      block: "center",
+    });
+  }, 200);
     const username = localStorage.getItem("username") || "someone is typing...";
     if(pathname === "/") {
 	socket?.emit("feedback", username);
@@ -148,9 +161,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  useEffect(() => {
+  /* useEffect(() => {
     handleFocus();
-
+   
     // Check if the decorator is different before updating
     const currentDecorator = editorState.getDecorator();
     if (currentDecorator !== compositeDecorator) {
@@ -160,13 +173,35 @@ const ChatInput: React.FC<ChatInputProps> = ({
         })
       );
     }
-  }, [editorState.getCurrentContent()]);
+    
+  }, [editorState.getCurrentContent()]); */
+
+/* const hasAppliedDecorator = React.useRef(false);
+    useEffect(()=>{
+ if (hasAppliedDecorator.current) return;
+      const currentDecorator = editorState.getDecorator();
+      if (currentDecorator !== compositeDecorator) {
+        setEditorState((prevEditorState) =>
+          EditorState.set(prevEditorState, {
+            decorator: compositeDecorator,
+         })
+       );
+hasAppliedDecorator.current = true;
+
+      }},[compositeDecorator]) */
 
   const [isEnableAi, setIsEnableAi] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const aiContainerRef = useRef<HTMLDivElement>(null);
   outSideClose({ setState: setIsEnableAi, ref: aiContainerRef, arg: false });
+
+  const handleChatSession = (role:string, text:string) => {
+    const raw = sessionStorage.getItem("chatHistory") || "[]"
+    const history = JSON.parse(raw)
+    history.push({role, text});
+    sessionStorage.setItem("chatHistory", JSON.stringify(history)) 
+  }  
 
   function extractRawContent(response: any) {
     try {
@@ -190,6 +225,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const gemini = async (input: string) => {
     setLoading(true);
+
+    const chatHistory = sessionStorage.getItem('chatHistory') || ""
+    handleChatSession("user", input)
+
     const finalInput = `
 Generate only a valid Draft.js Raw ContentState JSON. Do not include any explanations, markdown, or formatting. 
 The output must be enclosed strictly between three ### (hashtags) and should be a valid JSON object following the RawDraftContentState structure.
@@ -216,6 +255,8 @@ Example Output:
 }
 ###
 
+Chat-History: ${chatHistory}
+
 Now, generate a Draft.js Raw ContentState JSON for the following topic make sure answer of user question/input is responsive:
 "${input}"
 `;
@@ -228,7 +269,13 @@ Now, generate a Draft.js Raw ContentState JSON for the following topic make sure
     });
     const data = await res.json();
     const content = extractRawContent(data);
-    setEditorState(EditorState.createWithContent(convertFromRaw(content)));
+    
+    const newEditorState = EditorState.createWithContent(convertFromRaw(content))
+    const answerAsText = newEditorState.getCurrentContent().getPlainText();
+    setEditorState(newEditorState);
+
+    handleChatSession("user", answerAsText)
+
     setLoading(false);
     setPrompt("");
   };
@@ -250,7 +297,7 @@ Now, generate a Draft.js Raw ContentState JSON for the following topic make sure
     return true;
   };
 
-  const editorRef = React.useRef<Editor | null>(null)
+  
   function blurEditor(){
 	if(editorRef.current) {
 setEditorState(EditorState.createEmpty())
@@ -262,9 +309,12 @@ setEditorState(EditorState.createEmpty())
   }
 }
 
+
+
   return (
     <div
       // py-2 max-[600px]:py-4
+ id="chat-input-container"
       className={cn(
         `fixed w-full min-[600px]:bottom-3 bottom-0 px-3 max-[600px]:pb-4 text-black bg-white h-fit dark:text-white  dark:bg-black `,
         className
@@ -287,7 +337,7 @@ setEditorState(EditorState.createEmpty())
           isPostContent={isPostContent}
         />
 
-        {isEnableAi ? (
+        { isEnableAi ? (
           <div
             ref={aiContainerRef}
             className="flex items-center gap-x-2 absolute right-2 bottom-[120%]"
@@ -297,10 +347,19 @@ setEditorState(EditorState.createEmpty())
               placeholder="write prompt"
               value={prompt}
               onChange={(e: any) => setPrompt(e.target.value)}
+	        onFocus={(e:React.FocusEvent<HTMLTextAreaElement>) => {
+const el = e.target;
+  setTimeout(() => {
+    el.scrollIntoView({
+      // behavior: "smooth",
+      block: "center",
+    });
+  }, 200);
+  }}
             />
             <button
               className="text-white cursor-pointer active:scale-80 transition-all active:bg-blue-600 bg-blue-500 rounded flex items-center gap-x-2 p-0.5"
-              onClick={() => {
+              onClick={async () => {
                 if (!/\S/.test(prompt)) return toast("prompt is empty");
                 gemini(prompt?.trim());
               }}
@@ -315,7 +374,7 @@ setEditorState(EditorState.createEmpty())
           >
             <b>Ai</b>
           </div>
-        )}
+        ) }
       </div>
       <div className={"flex gap-x-2"}>
         <div className="relative grow w-full px-2 outline outline-blue-500 rounded placeholder:text-blue-400 content max-h-[50vh] over-y dark:text-white text-black bg-white dark:bg-black">
@@ -343,7 +402,7 @@ setEditorState(EditorState.createEmpty())
           />
         </div>
         <button
-          className="bg-blue-500 cursor-pointer rounded-full aspect-square active:bg-blue-600 active:scale-95 text-white  p-2 self-baseline"
+          className="bg-blue-500 cursor-pointer rounded-full aspect-square active:bg-blue-600 active:scale-95 text-white p-2 self-baseline"
           onClick={() => {
             if (isEditorEmpty(editorState)) {
               return; // Don't send if empty

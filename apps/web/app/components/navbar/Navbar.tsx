@@ -23,7 +23,6 @@ const Navbar: React.FC<NavbarProps> = ({ isMobile }) => {
   const pathname = usePathname();
 
   if (pathname.includes("room-not-found")) return null;
-  useEffect(()=>{console.log("whoTyping: ", whoTyping)},[whoTyping])
 
   return (
     <>

@@ -2,7 +2,6 @@ import http from "http";
 import SocketService from "./services/socket";
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import dotenv from "dotenv"
 
 import {
   globalErrorHandlingController,
@@ -12,6 +11,7 @@ import {
   fetchIPAddressController,
   fetchURLTitleController,
 } from "./controllers/appController";
+import mediaRoute from "./routes/mediaRoute";
 
 
 const app = express();
@@ -19,7 +19,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.use("/media", mediaRoute)
 // init socket
+
 const socketService = new SocketService();
 const httpServer = http.createServer(app);
 

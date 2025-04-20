@@ -11,6 +11,7 @@ import { useTotalClientsStore, useWhoTypingStore } from "@store/index";
 import { getSocket } from "../../../utils/socket";
 import { toast } from "react-toastify";
 
+
 const DynamicChatMessageBox = React.memo(
   dynamic(() => import("../../components/chat/utils/ChatMessageBox"), {
     ssr: false,
@@ -92,16 +93,16 @@ const RoomChatBox: React.FC<RoomChatBoxProps> = ({ className }) => {
     toast(message);
     router.push(`/room/room-not-found`);
   };
-  const handleOfflineFromRoom = async(message:string) => {
+  const handleOfflineFromRoom = async (message: string) => {
     toast(message);
   }
 
-  const handleRoomFeedback = async(username: string) => {
-    setWhoTyping({path: "/room", username})
+  const handleRoomFeedback = async (username: string) => {
+    setWhoTyping({ path: "/room", username })
   }
 
-  useEffect(() => {
-    if(!socket) return;
+    useEffect(() => {
+      if (!socket) return;
 
       socket.off("room-message", handleRoomMessage);
       socket.off("join-room", handleRoomJoin);
@@ -110,61 +111,62 @@ const RoomChatBox: React.FC<RoomChatBoxProps> = ({ className }) => {
 
       socket.off("get-room-size");
       socket.off("room-size", handleRoomSize);
-      socket.off("room-!exists", handleRoomNotExists);
+      socket.off("room-not-exist", handleRoomNotExists);
       socket.off("error", handleRoomError);
-        
-    if(socket && !socket.connected) {
-     socket.connect()
-   }
+      if (socket && !socket.connected) {
+        socket.connect()
+      }
 
 
-     socket.emit("join-room", roomId, localStorage.getItem("username"));
-     socket.emit("get-room-size", roomId);
- 
-     socket.on("room-message", handleRoomMessage);
-     socket.on("join-room", handleRoomJoin);
-     socket.on("room-left", handleRoomLeft);
-     socket.on("user-offline-from-room", handleOfflineFromRoom)
 
-     socket.on("room-size", handleRoomSize);
-     socket.on("room-!exists", handleRoomNotExists);
-     socket.on("room-feedback", handleRoomFeedback)
-     socket.on("error", handleRoomError);
+      socket.emit("join-room", roomId, localStorage.getItem("username"));
+
+      socket.emit("get-room-size", roomId);
+
+      socket.on("room-message", handleRoomMessage);
+      socket.on("join-room", handleRoomJoin);
+      socket.on("room-left", handleRoomLeft);
+      socket.on("user-offline-from-room", handleOfflineFromRoom)
+
+      socket.on("room-size", handleRoomSize);
+      socket.on("room-not-exist", handleRoomNotExists);
+      socket.on("room-feedback", handleRoomFeedback)
+      socket.on("error", handleRoomError);
 
 
-    return () => {
-      // socket.emit("leave-room", roomId, localStorage.getItem("username"));
+      return () => {
+        // socket.emit("leave-room", roomId, localStorage.getItem("username"));
 
-      socket.emit("user-offline-from-room", roomId, localStorage.getItem("username"))
-      socket.off("room-message", handleRoomMessage);
-      socket.off("join-room", handleRoomJoin);
+        socket.emit("user-offline-from-room", roomId, localStorage.getItem("username"))
+        socket.off("room-message", handleRoomMessage);
+        socket.off("join-room", handleRoomJoin);
 
-      // socket.off("room-left", handleRoomLeft);
+        // socket.off("room-left", handleRoomLeft);
 
-      socket.off("get-room-size");
-      socket.off("room-size", handleRoomSize);
-      socket.off("room-!exists", handleRoomNotExists);
-      socket.off("error", handleRoomError);
-    };
-  }, [searchParams.get("id")]);
+        socket.off("get-room-size");
+        socket.off("room-size", handleRoomSize);
+        socket.off("room-not-exist", handleRoomNotExists);
+        socket.off("error", handleRoomError);
+      };
+    }, [searchParams.get("id")]);
 
-  return (
-    <div>
-      <div
-        style={{ height: "calc(100vh - 70px)" }}
-        className={cn("dark-blue-gradient", className)}
-      >
-        <DynamicChatMessageBox messages={messages} />
+    return (
+      <div>
+        <div
+          style={{ height: "calc(100vh - 70px)" }}
+          className={cn("dark-blue-gradient", className)}
+        >
+          <DynamicChatMessageBox messages={messages} />
 
-        <ChatInput
-          message={message}
-          setMessage={setMessage}
-          sendMessage={sendMessage}
-          socket={socket}
-        />
+          <ChatInput
+            message={message}
+            setMessage={setMessage}
+            sendMessage={sendMessage}
+            socket={socket}
+          />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default RoomChatBox;
+  export default RoomChatBox;

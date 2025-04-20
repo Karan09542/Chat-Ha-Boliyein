@@ -4,10 +4,16 @@ import { BACKEND_URL } from "../app/config";
 
 let socket: Socket;
 
-export const getSocket = ():Socket => {
-  if (!socket){
-      console.log("🔥 Creating new socket connection...")
-      socket = io(BACKEND_URL);
+export const getSocket = (): Socket => {
+  if (!socket) {
+    console.log("🔥 Creating new socket connection...")
+    socket = io(BACKEND_URL, {
+      reconnection: true,
+      reconnectionAttempts: 5,       // Optional
+      reconnectionDelay: 1000,       // Optional
+      autoConnect: true,             // Default is true
+      transports: ['websocket'],
+    });
   };
   return socket
 }
@@ -27,8 +33,8 @@ export const getSocket = ():Socket => {
   
   public static getInstance(): Socket {
    if(!SocketSingleton.instance) {
-	console.log("🔥 Creating new socket connection...");
-      	SocketSingleton.instance = io(BACKEND_URL);
+  console.log("🔥 Creating new socket connection...");
+        SocketSingleton.instance = io(BACKEND_URL);
     }
    return SocketSingleton.instance
   }
