@@ -139,7 +139,7 @@ body {
 
 /* max-[600px]:w-40 w-52 */
 
-  :is(.content) img {
+  :is(.content, .show-content) img {
     @apply max-[600px]:w-40 mx-auto w-52 py-2 rounded-xl cursor-pointer;
   }
 
