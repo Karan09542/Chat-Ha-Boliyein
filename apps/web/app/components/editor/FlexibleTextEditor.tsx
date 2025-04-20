@@ -404,11 +404,12 @@ React.useEffect(() => {
     setEditorState(newEditorState);
     const plainText = newEditorState.getCurrentContent().getPlainText();
     setIsPostContent(/\S/.test(plainText))
-const cs = editorState.getCurrentContent()
+
+/* const cs = editorState.getCurrentContent()
 console.log("handleEcs ", convertToRaw(cs))
     console.log("working")
     if(isComposing) return;
-    console.log("working after")
+    console.log("working after") */
 
     const selection = newEditorState.getSelection();
     const anchorKey = selection.getAnchorKey();
