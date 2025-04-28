@@ -94,6 +94,27 @@ body {
   }
 }
 
+input:checked + label .image {
+ @apply fixed inset-0 w-fit h-fit m-auto bg-white/20 rounded-xl z-10 p-5;
+}
+
+
+input:checked + label .image > img {
+ @apply  max-[600px]:w-[85%] min-[600px]:w-[70%] max-w-[500px] ;
+} 
+
+input:checked + label .image > label {
+ @apply absolute top-0 right-0 size-fit;
+}
+
+:not(input:checked) .image-show-handler {
+ @apply hidden;
+}
+
+input:checked + label  .image-show-handler {
+@apply  max-[600px]:right-16 right-20 top-1.5 inline-block cursor-pointer bg-white p-1 rounded-full z-20;
+} 
+
 @layer components {
   .dark-blue-gradient {
     @apply bg-gradient-to-r from-[#0f172a] to-[#334155];

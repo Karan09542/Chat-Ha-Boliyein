@@ -666,19 +666,6 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
       " "
     );
 
-    /*
-        const newEditorState = EditorState.set(editorState, {
-          currentContent: contentStateWithEntity,
-        });
-        return {
-          newEditorState: AtomicBlockUtils.insertAtomicBlock(
-            newEditorState,
-            entityKey,
-            " "
-          ),
-          entityKey,
-        }; */
-
     return { newEditorState: finalEditorState, entityKey };
   };
 
@@ -777,16 +764,18 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
   const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileArray = [...(e.target.files || [])];
     if (fileArray.length === 0) return;
+    // alert(`e.target.files: ${JSON.stringify(e?.target?.files)}`);
 
     // const result: { name: string, base64: string }[] = [];
 
     fileArray.forEach((file) => {
       const worker = new Worker('worker.js');
-
+      
       worker.postMessage({ file });
-
+      
       worker.onmessage = (event) => {
         if (event.data.base64) {
+
           // result.push({ name: file.name, base64: event.data.base64 });
           if (file.type.includes("video")) {
             setEditorState(prevEditorState => {
@@ -816,9 +805,9 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
   };
   const mediaInputList = [
     {
-      type: "image",
+      type: "video",
       svg: <PiVideoFill color={"#FF0B55"} />,
-      input: <input onChange={handleMediaChange} id="image" type="file" accept="video/*" hidden multiple />
+      input: <input onChange={handleMediaChange} id="video" type="file" accept="video/*" hidden multiple />
     },
     {
       type: "audio",
@@ -839,14 +828,12 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
   useEffect(() => {
     if (mediaAttachmentRef.current) {
       const { x, y } = mediaAttachmentRef.current.getBoundingClientRect();
-      console.log("bounding: ", mediaAttachmentRef.current.getBoundingClientRect())
       setMediaPopupPosition({ x, y })
     }
   }, [size])
   const MediaPopup: React.FC = () => {
     return (
       <div
-        // style={{ position: "fixed", top: mediaPopupPosition.y - 72, left: mediaPopupPosition.x }}
         className="flex gap-2 dark:bg-whit bg-blac border-[#627254] border bg-[#EEF7FF] w-fit p-1 rounded-lg
 ">
         {
