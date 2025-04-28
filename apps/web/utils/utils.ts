@@ -41,18 +41,17 @@ export const handleCopy = ({index, refs,text}:{index?: number, refs?:RefObject<(
   };
 
 
-// export const sendNotification = (message: string) => {
-//   if (!("Notification" in window)) {
-//     console.log("This browser does not support notifications.");
-//     return;
-//   }
-//   Notification.requestPermission().then((permission) => {
-//     if (permission === "granted") {
-//       new Notification(message);
-//     }
-//     return;
-//   });
-// };
+export const getNotificationMessage = (senderUsername:string): string => {
+  const messagesOption = [
+    `🔔 ${senderUsername} जी ने आपको भक्ति से भरा एक संदेश भेजा है। कृपया दर्शन करें।`,
+    `🌸 भक्त ${senderUsername} की भावना आपके चरणों में पहुँची है। एक संदेश आपका इंतज़ार कर रहा है।`,
+    `🔱 हर हर महादेव! ${senderUsername} जी ने अपनी श्रद्धा से आपको संदेश भेजा है।`,
+    `🕊️ ${senderUsername} जी ने ध्यान और प्रेम के साथ एक संदेश भेजा है। ह्रदय से स्वीकार करें।`,
+    `📿 राधे राधे! ${senderUsername} जी का एक भक्तिमय संदेश आपके लिए आया है।`,
+    `🙏 ${senderUsername} जी ने आपके साथ अपनी भक्ति बाँटी है, एक संदेश के रूप में।`,
+  ];
+  return messagesOption[Math.floor(Math.random() * messagesOption.length)] as string;
+}
 
 export const checkPermission = () => {
   if (typeof window === "undefined") return;

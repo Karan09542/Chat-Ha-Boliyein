@@ -107,88 +107,51 @@ const ChatInput: React.FC<ChatInputProps> = ({
   // });
   const suggestions = [{}];
 
-  // const [editorState, setEditorState] = useState(EditorState.createEmpty());
-
   const initialRawContent = {
     entityMap: {},
     blocks: [],
   };
-  
-  const compositeDecorator = useDecorator({isFootnote})
-   const [editorState, setEditorState] = useState(
-        EditorState.set(
+
+  const compositeDecorator = useDecorator({ isFootnote })
+  const [editorState, setEditorState] = useState(
+    EditorState.set(
       EditorState.createWithContent(convertFromRaw(initialRawContent)),
       { decorator: compositeDecorator }
     )
-    
-  );
 
- /* const compositeDecorator = React.useMemo(() => useDecorator({
-    isFootnote,
-    editorState,
-    setEditorState,
-  }), [editorState, isFootnote]); */
+  );
 
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const roomId = searchParams.get("id")
-const editorRef = React.useRef<Editor | null>(null)
+  const editorRef = React.useRef<Editor | null>(null)
   const handleFocus = (e?: React.FocusEvent<HTMLDivElement>) => {
     // toast("ram")
-// toast(document.body.scrollHeight)
-  setTimeout(() => {
-    editorRef.current?.editor?.scrollIntoView({
-      // behavior: "smooth",
-      block: "center",
-    });
-  }, 200);
+    // toast(document.body.scrollHeight)
+    setTimeout(() => {
+      editorRef.current?.editor?.scrollIntoView({
+        // behavior: "smooth",
+        block: "center",
+      });
+    }, 200);
     const username = localStorage.getItem("username") || "someone is typing...";
-    if(pathname === "/") {
-	socket?.emit("feedback", username);
+    if (pathname === "/") {
+      socket?.emit("feedback", username);
     }
-    if(pathname === "/room") {
-	socket?.emit("room-feedback", roomId, username);
+    if (pathname === "/room") {
+      socket?.emit("room-feedback", roomId, username);
     }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
 
-    if(pathname === "/") {
-	socket?.emit("feedback", "");
+    if (pathname === "/") {
+      socket?.emit("feedback", "");
     }
-    if(pathname === "/room") {
-	socket?.emit("room-feedback", roomId, "");
+    if (pathname === "/room") {
+      socket?.emit("room-feedback", roomId, "");
     }
   };
-
-  /* useEffect(() => {
-    handleFocus();
-   
-    // Check if the decorator is different before updating
-    const currentDecorator = editorState.getDecorator();
-    if (currentDecorator !== compositeDecorator) {
-      setEditorState((prevEditorState) =>
-        EditorState.set(prevEditorState, {
-          decorator: compositeDecorator,
-        })
-      );
-    }
-    
-  }, [editorState.getCurrentContent()]); */
-
-/* const hasAppliedDecorator = React.useRef(false);
-    useEffect(()=>{
- if (hasAppliedDecorator.current) return;
-      const currentDecorator = editorState.getDecorator();
-      if (currentDecorator !== compositeDecorator) {
-        setEditorState((prevEditorState) =>
-          EditorState.set(prevEditorState, {
-            decorator: compositeDecorator,
-         })
-       );
-hasAppliedDecorator.current = true;
-
-      }},[compositeDecorator]) */
 
   const [isEnableAi, setIsEnableAi] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>("");
@@ -196,12 +159,12 @@ hasAppliedDecorator.current = true;
   const aiContainerRef = useRef<HTMLDivElement>(null);
   outSideClose({ setState: setIsEnableAi, ref: aiContainerRef, arg: false });
 
-  const handleChatSession = (role:string, text:string) => {
+  const handleChatSession = (role: string, text: string) => {
     const raw = sessionStorage.getItem("chatHistory") || "[]"
     const history = JSON.parse(raw)
-    history.push({role, text});
-    sessionStorage.setItem("chatHistory", JSON.stringify(history)) 
-  }  
+    history.push({ role, text });
+    sessionStorage.setItem("chatHistory", JSON.stringify(history))
+  }
 
   function extractRawContent(response: any) {
     try {
@@ -269,7 +232,7 @@ Now, generate a Draft.js Raw ContentState JSON for the following topic make sure
     });
     const data = await res.json();
     const content = extractRawContent(data);
-    
+
     const newEditorState = EditorState.createWithContent(convertFromRaw(content))
     const answerAsText = newEditorState.getCurrentContent().getPlainText();
     setEditorState(newEditorState);
@@ -297,24 +260,24 @@ Now, generate a Draft.js Raw ContentState JSON for the following topic make sure
     return true;
   };
 
-  
-  function blurEditor(){
-	if(editorRef.current) {
-setEditorState(EditorState.createEmpty())
-	
-	requestAnimationFrame(() => {
-     editorRef.current?.focus();
-      editorRef.current?.blur();
-    });
+
+  function blurEditor() {
+    if (editorRef.current) {
+      setEditorState(EditorState.createEmpty())
+
+      requestAnimationFrame(() => {
+        editorRef.current?.focus();
+        editorRef.current?.blur();
+      });
+    }
   }
-}
 
 
 
   return (
     <div
       // py-2 max-[600px]:py-4
- id="chat-input-container"
+      id="chat-input-container"
       className={cn(
         `fixed w-full min-[600px]:bottom-3 bottom-0 px-3 max-[600px]:pb-4 text-black bg-white h-fit dark:text-white  dark:bg-black `,
         className
@@ -337,7 +300,7 @@ setEditorState(EditorState.createEmpty())
           isPostContent={isPostContent}
         />
 
-        { isEnableAi ? (
+        {isEnableAi ? (
           <div
             ref={aiContainerRef}
             className="flex items-center gap-x-2 absolute right-2 bottom-[120%]"
@@ -347,15 +310,15 @@ setEditorState(EditorState.createEmpty())
               placeholder="write prompt"
               value={prompt}
               onChange={(e: any) => setPrompt(e.target.value)}
-	        onFocus={(e:React.FocusEvent<HTMLTextAreaElement>) => {
-const el = e.target;
-  setTimeout(() => {
-    el.scrollIntoView({
-      // behavior: "smooth",
-      block: "center",
-    });
-  }, 200);
-  }}
+              onFocus={(e: React.FocusEvent<HTMLTextAreaElement>) => {
+                const el = e.target;
+                setTimeout(() => {
+                  el.scrollIntoView({
+                    // behavior: "smooth",
+                    block: "center",
+                  });
+                }, 200);
+              }}
             />
             <button
               className="text-white cursor-pointer active:scale-80 transition-all active:bg-blue-600 bg-blue-500 rounded flex items-center gap-x-2 p-0.5"
@@ -374,12 +337,12 @@ const el = e.target;
           >
             <b>Ai</b>
           </div>
-        ) }
+        )}
       </div>
       <div className={"flex gap-x-2"}>
-        <div className="relative grow w-full px-2 outline outline-blue-500 rounded placeholder:text-blue-400 content max-h-[50vh] over-y dark:text-white text-black bg-white dark:bg-black">
+        <div className="relative grow w-full px-2 outline outline-blue-500 rounded placeholder:text-blue-400 content editor-code max-h-[50vh] over-y dark:text-white text-black bg-white dark:bg-black">
           <DynamicFlexibleTextEditor
-	    ref={editorRef}
+            ref={editorRef}
             placeholder={"ram"}
             isPlaceholder={true}
             editorState={editorState}
@@ -413,7 +376,7 @@ const el = e.target;
               JSON.stringify(message),
               `${localStorage.getItem("username") || ""}`
             );
-	    blurEditor()
+            blurEditor()
           }}
         >
           <IoMdSend />

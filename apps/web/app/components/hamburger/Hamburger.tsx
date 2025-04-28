@@ -17,6 +17,8 @@ import { getSocket } from "../../../utils/socket";
 import { Socket } from "socket.io-client";
 import Switch from "../button/switch/Switch";
 import { handleCopy } from "../../../utils/utils";
+import { useJoinRequestToRoom } from "@store/index";
+import { FaExclamation } from "react-icons/fa";
 
 interface HamburgerProps {
   img?: string;
@@ -26,6 +28,260 @@ interface HamburgerProps {
 const handleProfileData = (key: string, value: string) => {
   localStorage.setItem(key, value);
 };
+
+// const countryEmojis = {
+//   AD: "🇦🇩",
+//   AE: "🇦🇪",
+//   AF: "🇦🇫",
+//   AG: "🇦🇬",
+//   AI: "🇦🇮",
+//   AL: "🇦🇱",
+//   AM: "🇦🇲",
+//   AO: "🇦🇴",
+//   AQ: "🇦🇶",
+//   AR: "🇦🇷",
+//   AS: "🇦🇸",
+//   AT: "🇦🇹",
+//   AU: "🇦🇺",
+//   AW: "🇦🇼",
+//   AX: "🇦🇽",
+//   AZ: "🇦🇿",
+//   BA: "🇧🇦",
+//   BB: "🇧🇧",
+//   BD: "🇧🇩",
+//   BE: "🇧🇪",
+//   BF: "🇧🇫",
+//   BG: "🇧🇬",
+//   BH: "🇧🇭",
+//   BI: "🇧🇮",
+//   BJ: "🇧🇯",
+//   BL: "🇧🇱",
+//   BM: "🇧🇲",
+//   BN: "🇧🇳",
+//   BO: "🇧🇴",
+//   BQ: "🇧🇶",
+//   BR: "🇧🇷",
+//   BS: "🇧🇸",
+//   BT: "🇧🇹",
+//   BV: "🇧🇻",
+//   BW: "🇧🇼",
+//   BY: "🇧🇾",
+//   BZ: "🇧🇿",
+//   CA: "🇨🇦",
+//   CC: "🇨🇨",
+//   CD: "🇨🇩",
+//   CF: "🇨🇫",
+//   CG: "🇨🇬",
+//   CH: "🇨🇭",
+//   CI: "🇨🇮",
+//   CK: "🇨🇰",
+//   CL: "🇨🇱",
+//   CM: "🇨🇲",
+//   CN: "🇨🇳",
+//   CO: "🇨🇴",
+//   CR: "🇨🇷",
+//   CU: "🇨🇺",
+//   CV: "🇨🇻",
+//   CW: "🇨🇼",
+//   CX: "🇨🇽",
+//   CY: "🇨🇾",
+//   CZ: "🇨🇿",
+//   DE: "🇩🇪",
+//   DJ: "🇩🇯",
+//   DK: "🇩🇰",
+//   DM: "🇩🇲",
+//   DO: "🇩🇴",
+//   DZ: "🇩🇿",
+//   EC: "🇪🇨",
+//   EE: "🇪🇪",
+//   EG: "🇪🇬",
+//   EH: "🇪🇭",
+//   ER: "🇪🇷",
+//   ES: "🇪🇸",
+//   ET: "🇪🇹",
+//   FI: "🇫🇮",
+//   FJ: "🇫🇯",
+//   FK: "🇫🇰",
+//   FM: "🇫🇲",
+//   FO: "🇫🇴",
+//   FR: "🇫🇷",
+//   GA: "🇬🇦",
+//   GB: "🇬🇧",
+//   GD: "🇬🇩",
+//   GE: "🇬🇪",
+//   GF: "🇬🇫",
+//   GG: "🇬🇬",
+//   GH: "🇬🇭",
+//   GI: "🇬🇮",
+//   GL: "🇬🇱",
+//   GM: "🇬🇲",
+//   GN: "🇬🇳",
+//   GP: "🇬🇵",
+//   GQ: "🇬🇶",
+//   GR: "🇬🇷",
+//   GS: "🇬🇸",
+//   GT: "🇬🇹",
+//   GU: "🇬🇺",
+//   GW: "🇬🇼",
+//   GY: "🇬🇾",
+//   HK: "🇭🇰",
+//   HM: "🇭🇲",
+//   HN: "🇭🇳",
+//   HR: "🇭🇷",
+//   HT: "🇭🇹",
+//   HU: "🇭🇺",
+//   ID: "🇮🇩",
+//   IE: "🇮🇪",
+//   IL: "🇮🇱",
+//   IM: "🇮🇲",
+//   IN: "🇮🇳",
+//   IO: "🇮🇴",
+//   IQ: "🇮🇶",
+//   IR: "🇮🇷",
+//   IS: "🇮🇸",
+//   IT: "🇮🇹",
+//   JE: "🇯🇪",
+//   JM: "🇯🇲",
+//   JO: "🇯🇴",
+//   JP: "🇯🇵",
+//   KE: "🇰🇪",
+//   KG: "🇰🇬",
+//   KH: "🇰🇭",
+//   KI: "🇰🇮",
+//   KM: "🇰🇲",
+//   KN: "🇰🇳",
+//   KP: "🇰🇵",
+//   KR: "🇰🇷",
+//   KW: "🇰🇼",
+//   KY: "🇰🇾",
+//   KZ: "🇰🇿",
+//   LA: "🇱🇦",
+//   LB: "🇱🇧",
+//   LC: "🇱🇨",
+//   LI: "🇱🇮",
+//   LK: "🇱🇰",
+//   LR: "🇱🇷",
+//   LS: "🇱🇸",
+//   LT: "🇱🇹",
+//   LU: "🇱🇺",
+//   LV: "🇱🇻",
+//   LY: "🇱🇾",
+//   MA: "🇲🇦",
+//   MC: "🇲🇨",
+//   MD: "🇲🇩",
+//   ME: "🇲🇪",
+//   MF: "🇲🇫",
+//   MG: "🇲🇬",
+//   MH: "🇲🇭",
+//   MK: "🇲🇰",
+//   ML: "🇲🇱",
+//   MM: "🇲🇲",
+//   MN: "🇲🇳",
+//   MO: "🇲🇴",
+//   MP: "🇲🇵",
+//   MQ: "🇲🇶",
+//   MR: "🇲🇷",
+//   MS: "🇲🇸",
+//   MT: "🇲🇹",
+//   MU: "🇲🇺",
+//   MV: "🇲🇻",
+//   MW: "🇲🇼",
+//   MX: "🇲🇽",
+//   MY: "🇲🇾",
+//   MZ: "🇲🇿",
+//   NA: "🇳🇦",
+//   NC: "🇳🇨",
+//   NE: "🇳🇪",
+//   NF: "🇳🇫",
+//   NG: "🇳🇬",
+//   NI: "🇳🇮",
+//   NL: "🇳🇱",
+//   NO: "🇳🇴",
+//   NP: "🇳🇵",
+//   NR: "🇳🇷",
+//   NU: "🇳🇺",
+//   NZ: "🇳🇿",
+//   OM: "🇴🇲",
+//   PA: "🇵🇦",
+//   PE: "🇵🇪",
+//   PF: "🇵🇫",
+//   PG: "🇵🇬",
+//   PH: "🇵🇭",
+//   PK: "🇵🇰",
+//   PL: "🇵🇱",
+//   PM: "🇵🇲",
+//   PN: "🇵🇳",
+//   PR: "🇵🇷",
+//   PS: "🇵🇸",
+//   PT: "🇵🇹",
+//   PW: "🇵🇼",
+//   PY: "🇵🇾",
+//   QA: "🇶🇦",
+//   RE: "🇷🇪",
+//   RO: "🇷🇴",
+//   RS: "🇷🇸",
+//   RU: "🇷🇺",
+//   RW: "🇷🇼",
+//   SA: "🇸🇦",
+//   SB: "🇸🇧",
+//   SC: "🇸🇨",
+//   SD: "🇸🇩",
+//   SE: "🇸🇪",
+//   SG: "🇸🇬",
+//   SH: "🇸🇭",
+//   SI: "🇸🇮",
+//   SJ: "🇸🇯",
+//   SK: "🇸🇰",
+//   SL: "🇸🇱",
+//   SM: "🇸🇲",
+//   SN: "🇸🇳",
+//   SO: "🇸🇴",
+//   SR: "🇸🇷",
+//   SS: "🇸🇸",
+//   ST: "🇸🇹",
+//   SV: "🇸🇻",
+//   SX: "🇸🇽",
+//   SY: "🇸🇾",
+//   SZ: "🇸🇿",
+//   TC: "🇹🇨",
+//   TD: "🇹🇩",
+//   TF: "🇹🇫",
+//   TG: "🇹🇬",
+//   TH: "🇹🇭",
+//   TJ: "🇹🇯",
+//   TK: "🇹🇰",
+//   TL: "🇹🇱",
+//   TM: "🇹🇲",
+//   TN: "🇹🇳",
+//   TO: "🇹🇴",
+//   TR: "🇹🇷",
+//   TT: "🇹🇹",
+//   TV: "🇹🇻",
+//   TW: "🇹🇼",
+//   TZ: "🇹🇿",
+//   UA: "🇺🇦",
+//   UG: "🇺🇬",
+//   UM: "🇺🇲",
+//   US: "🇺🇸",
+//   UY: "🇺🇾",
+//   UZ: "🇺🇿",
+//   VA: "🇻🇦",
+//   VC: "🇻🇨",
+//   VE: "🇻🇪",
+//   VG: "🇻🇬",
+//   VI: "🇻🇮",
+//   VN: "🇻🇳",
+//   VU: "🇻🇺",
+//   WF: "🇼🇫",
+//   WS: "🇼🇸",
+//   YE: "🇾🇪",
+//   YT: "🇾🇹",
+//   ZA: "🇿🇦",
+//   ZM: "🇿🇲",
+//   ZW: "🇿🇼",
+// };
+
+const socket = getSocket();
 
 const createRoom = ({
   socket,
@@ -38,10 +294,11 @@ const createRoom = ({
 }) => {
   if (!socket) return;
   if (customeRoomName) {
-    socket.emit("create-room", customeRoomName);
+    const customeRoomNameTrimmed = customeRoomName.trim();
+    socket.emit("create-room", customeRoomNameTrimmed, localStorage.getItem("username"));
     setCustomeRoomName("");
   } else {
-    socket.emit("create-room");
+    socket.emit("create-room", "", localStorage.getItem("username"));
   }
 };
 
@@ -49,10 +306,66 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
 
 
   const searchParams = useSearchParams();
-  const roomId = searchParams.get("id");
+  const roomId = searchParams.get("id")?.trim();
   const [joinTo, setJoinTo] = useState<string>("");
   const [isCustomeRoomName, setIsCustomeRoomName] = useState<boolean>(false);
   const [customeRoomName, setCustomeRoomName] = useState<string>("");
+  const [admin, setAdmin] = useState<{ name?: string, country: string, isGoneFrom:Record<string, boolean> }>({ name: "", country: "", isGoneFrom: {} });
+  const setIsSendJoinRequest = useJoinRequestToRoom(state => state.setIsSendJoinRequest)
+
+
+
+  async function handleRoomAdmin(username: string) {
+    if (username) {
+      setAdmin(prev => ({ ...prev, name: username }))
+    } else {
+      setAdmin(prev => ({ ...prev, name: "Unknown" }))
+    }
+  }
+  const handleRoomNotExists = async (message: string) => {
+    setIsSendJoinRequest(false)
+    toast(message);
+  };
+  const handleRoomExist = async () => {
+    setIsSendJoinRequest(true)
+  }
+  const handleAdminGone = async ({roomId}:{roomId:string}) => {
+    if(!roomId) return
+    const trimmedRoomId = roomId.trim();
+    setAdmin(prev => ({ ...prev, isGoneFrom: { ...prev.isGoneFrom, [trimmedRoomId]: true } }))
+  }
+  useEffect(() => {
+    if (!socket) return;
+    if (roomId) {
+      socket.off("room-admin", handleRoomAdmin)
+    }
+    socket.off("room-exist", handleRoomExist);
+    socket.off("room-not-exist", handleRoomNotExists);
+    socket.off("admin-gone", handleAdminGone)
+
+
+    if (!socket.connected) {
+      socket.connect()
+    }
+
+    if (roomId) {
+      setTimeout(() => {
+        socket.emit("get-room-admin", roomId)
+      }, 1000);
+      socket.on("room-admin", handleRoomAdmin)
+    }
+
+    socket.on("room-exist", handleRoomExist);
+    socket.on("room-not-exist", handleRoomNotExists);
+    socket.on("admin-gone", handleAdminGone)
+
+    return () => {
+      socket.off("room-admin", handleRoomAdmin)
+      socket.off("room-exist", handleRoomExist);
+      socket.off("room-not-exist", handleRoomNotExists);
+      socket.off("admin-gone", handleAdminGone)
+    }
+  }, [roomId])
 
   return (
     <div>
@@ -67,14 +380,26 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
       </h3>
 
       {roomId ? (
-        <p
-          onClick={() => {
-            handleCopy({ text: roomId });
-          }}
-          className="bg-gray-200 py-1 px-2 rounded w-fit cursor-pointer dark:bg-red-500"
+        <div
+          onClick={() => handleCopy({ text: roomId })}
+          className="bg-gray-200 dark:bg-gray-700 py-2 px-3 rounded cursor-pointer w-fit hover:bg-gray-300 dark:hover:bg-gray-600 transition"
         >
-          {roomId}
-        </p>
+          <p className="text-sm font-mono text-blue-600 dark:text-blue-400">
+            Room ID: <span className="font-semibold">{roomId}</span>
+          </p>
+          <p className="text-xs text-gray-700 dark:text-gray-300">
+            Admin: {admin.name ? (
+              <span className="font-medium">{admin.name}</span>
+            ) : (
+              <span className="italic">Unknown</span>
+            )}{" "}
+            {admin.country && <span className="ml-1">({admin.country})</span>}
+            {admin.isGoneFrom[roomId] && 
+            <span className="ml-1 text-red-500 flex text-xs items-center">(gone)<FaExclamation size={9} /></span>
+            }
+          </p>
+        </div>
+
       ) : (
         <div className="py-1">
           {rooms.map((item: any, index: number) => (
@@ -144,20 +469,30 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
             type="text"
             name="joinTo"
             placeholder="Join To"
+
             value={joinTo}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setJoinTo(e.target.value);
             }}
+            onFocus={(e) => e.target.select()}
           />
-          <Link
-            href={`/room?id=${joinTo}`}
+          <button
+            onClick={() => {
+              if (!/\S/.test(joinTo)) {
+                toast.error("Room name should not empty or space");
+                return;
+              }
+              const trimmedJoinTo = joinTo.trim();
+              socket.emit("request-join-room", { roomId: trimmedJoinTo, username: localStorage.getItem("username") });
+            }
+            }
+
             className={
-              "bg-blue-500 px-2 py-0.5 rounded text-white active:scale-95 transition-all"
+              "bg-blue-500 px-2 py-0.5 rounded text-white active:scale-95 transition-all cursor-pointer select-none"
             }
           >
-            {" "}
-            join{" "}
-          </Link>
+            join
+          </button>
         </div>
       </>
     </div>
@@ -167,7 +502,7 @@ const Rooms = ({ rooms, setRooms, socket }: any) => {
 const ProfileContent = ({ data }: any) => {
   return (
     <div className="max-h-[70vh] overflow-y-auto">
-      
+
       {data?.map((item: any, index: number) => (
         <div
           key={item?.label || item?.name}
@@ -232,23 +567,27 @@ const Hamburger: React.FC<HamburgerProps> = ({ className }) => {
   };
 
   const [rooms, setRooms] = React.useState<Room[]>([]);
-  
-  const socket = getSocket();
 
-  const handleRoomExists = async (message: string) => {
+  const handleRoomAlreadyExist = async (message: string) => {
     toast.error(message);
   };
-  const handleRoomCreated = (roomId:string) => {
+  const handleRoomCreated = (roomId: string) => {
     setRooms((prev) => [...(prev || []), { roomId }]);
   };
   React.useEffect(() => {
-    
+    if (!socket) return;
+    socket.off("room-created", handleRoomCreated);
+    socket.off("room-already-exist", handleRoomAlreadyExist);
+
+    if (!socket.connected) {
+      socket.connect()
+    }
     socket.on("room-created", handleRoomCreated);
-    socket.on("room-exist", handleRoomExists);
+    socket.on("room-already-exist", handleRoomAlreadyExist);
 
     return () => {
       socket.off("room-created", handleRoomCreated);
-      socket.off("room-exist", handleRoomExists);
+      socket.off("room-already-exist", handleRoomAlreadyExist);
     };
   }, []);
 

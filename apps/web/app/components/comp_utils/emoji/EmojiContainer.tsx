@@ -42,7 +42,8 @@ const emojiList: { [key: string]: string[] } = {
     ],
     symbols: [
         "💯", "🔥", "🆗", "🆒", "🚫", "✅", "❌", "⚠️", "🛑", "💢",
-        "💬", "🗨️", "💤", "❓", "❗", "🔔", "⏰", "⏳", "🔁", "🔄"
+        "💬", "🗨️", "💤", "❓", "❗", "🔔", "⏰", "⏳", "🔁", "🔄",
+        "🎯","✨","⚡"
     ],
     bhakti: [
         "🕉️", // Om
@@ -226,8 +227,15 @@ const EmojiContainer: React.FC<EmojiContainerProps> = React.memo(({ setIsEmoji, 
             return;
         }
 
+        const getSearch = () => {
+            if (activeTab === "sticker") return "emoji"
+            else if (activeTab === "gif") return ""
+            else return "emoji"
+        }
+
         try {
-            const response = await fetch(`${BACKEND_URL}/media/${activeTab}?search=${search || "emoji"}&limit=30`);
+            if (activeTab === "emoji") return
+            const response = await fetch(`${BACKEND_URL}/media/${activeTab}?search=${search || getSearch()}&limit=30`);
             const result = await response.json();
 
             if (activeTab === "sticker") {
@@ -253,12 +261,10 @@ const EmojiContainer: React.FC<EmojiContainerProps> = React.memo(({ setIsEmoji, 
             className="max-h-[300px] over-y fixed max-[600px]:bottom-35 bottom-30 mt-10 w-64 bg-black dark:bg-white  rounded-xl shadow-lg z-50"
         >
             <div className="bg-inherit rounded-b sticky top-0 px-4 pt-4 mb-2">
-                <input
+                {activeTab !== "emoji" && <input
                     value={searchEmoji[activeTab]}
                     onChange={e => {
                         switch (activeTab) {
-                            case "emoji": setSearchEmoji({ [activeTab]: e.target.value });
-                                break;
                             case "sticker": setSearchEmoji({ [activeTab]: e.target.value });
                                 break;
                             case "gif": setSearchEmoji({ [activeTab]: e.target.value });
@@ -269,7 +275,15 @@ const EmojiContainer: React.FC<EmojiContainerProps> = React.memo(({ setIsEmoji, 
                     type="search"
                     className="outline-none w-full border border-blue-500 focus:ring focus:ring-blue-500 rounded text-blue-600 px-2 py-1 placeholder:text-blue-500 mb-2 max-[600px]:mb-4"
                     placeholder="Search"
-                />
+                    onFocus={(e) => {
+                        setTimeout(() => {
+                            e.target.scrollIntoView({
+                                // behavior: "smooth",
+                                block: "center",
+                            });
+                        }, 210);
+                    }}
+                />}
                 <div className="flex gap-x-3 py-2">
                     {emojiTabs.map(({ name }) => (
                         <button

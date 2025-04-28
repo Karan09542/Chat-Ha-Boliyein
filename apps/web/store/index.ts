@@ -2,7 +2,7 @@
 
 import { Socket } from "socket.io-client";
 import { create } from "zustand";
-import { Media } from "../utils/types";
+import { Media, MessageData } from "../utils/types";
 
 interface ISocketState {
   sendMessage?: (message: string) => any;
@@ -53,6 +53,15 @@ interface EmojiStore {
 
   cache: Record<string, Media[]>;
   setCache: (query: string, data: Media[]) => void;
+}
+interface JoinReqeustToRoom {
+  isSendJoinRequest: boolean;
+  setIsSendJoinRequest: (value: boolean) => void;
+}
+
+interface MessagesState {
+  messages: MessageData[];
+  setMessages: (messages:MessageData[]) => void;
 }
 
 export const useSocketStore = create<ISocketState>((set, get) => ({
@@ -123,3 +132,13 @@ export const useEmojiStore = create<EmojiStore>((set, get) => ({
     cache: { ...state.cache, [query]: data }
   }))
 }));
+
+export const useJoinRequestToRoom = create<JoinReqeustToRoom>((set)=>({
+  isSendJoinRequest:false,
+  setIsSendJoinRequest: (value) => set({isSendJoinRequest:value}),
+}))
+
+export const useMessagesStore = create<MessagesState>((set)=>({
+  messages: [],
+  setMessages: (messages) => set({messages})
+}))

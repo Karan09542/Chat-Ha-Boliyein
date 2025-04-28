@@ -9,7 +9,7 @@ export const getSocket = (): Socket => {
     console.log("🔥 Creating new socket connection...")
     socket = io(BACKEND_URL, {
       reconnection: true,
-      reconnectionAttempts: 5,       // Optional
+      // reconnectionAttempts: 5,       // Optional
       reconnectionDelay: 1000,       // Optional
       autoConnect: true,             // Default is true
       transports: ['websocket'],

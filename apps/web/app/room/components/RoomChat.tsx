@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import dynamic from "next/dynamic"
 import { ToastContainer } from "react-toastify";
-import RoomChatBox from "./RoomChatBox";
 
 const DynamicRoomChatBox = dynamic(() => import("./RoomChatBox"), {ssr:false})
 

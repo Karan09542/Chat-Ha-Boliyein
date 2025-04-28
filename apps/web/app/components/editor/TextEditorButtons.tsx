@@ -37,12 +37,19 @@ import Tippy from "@tippyjs/react";
 import { Media } from "../../../utils/types";
 import EmojiContainer from "../comp_utils/emoji/EmojiContainer";
 import { BACKEND_URL } from "../../config";
+import { CgAttachment } from "react-icons/cg";
 
 // import { useIpv4Store} from "@store/index";
+// media svgs
+import { PiVideoFill } from "react-icons/pi";
+import { MdOutlineAudiotrack } from "react-icons/md";
+import { IoDocumentText } from "react-icons/io5";
+import { insertMedia } from "../../../utils/draft_utils";
+import useResize from "../../../hooks/useResize";
 
 interface TextEditorButtonsProps {
   editorState: EditorState;
-  setEditorState: (editorState: EditorState) => void;
+  setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
   isLinkInput: boolean;
   setIsLinkInput: (isLinkInput: boolean) => void;
   isFootnote: boolean;
@@ -166,7 +173,6 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log({ data });
         if (data.status === "success") {
           anchorName = data.title || (isProtocol ? link : "https://" + link);
           setUrl("");
@@ -767,7 +773,100 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
 
 
 
+  // Main File (React)
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileArray = [...(e.target.files || [])];
+    if (fileArray.length === 0) return;
 
+    // const result: { name: string, base64: string }[] = [];
+
+    fileArray.forEach((file) => {
+      const worker = new Worker('worker.js');
+
+      worker.postMessage({ file });
+
+      worker.onmessage = (event) => {
+        if (event.data.base64) {
+          // result.push({ name: file.name, base64: event.data.base64 });
+          if (file.type.includes("video")) {
+            setEditorState(prevEditorState => {
+              const { newEditorState } = insertMedia(prevEditorState, "VIDEO", event.data.base64);
+              return newEditorState;
+            })
+          }
+          else if (file.type.includes("audio")) {
+            setEditorState(prevEditorState => {
+              const { newEditorState } = insertMedia(prevEditorState, "AUDIO", event.data.base64);
+              return newEditorState;
+            })
+          }
+          else if (file) {
+            setEditorState(prevEditorState => {
+              const { newEditorState } = insertMedia(prevEditorState, "FILE", { src: event.data.base64, name: file.name, fileType: file.type });
+              return newEditorState;
+            })
+          }
+
+          worker.terminate()
+        } else {
+          console.error('Error in processing file');
+        }
+      };
+    });
+  };
+  const mediaInputList = [
+    {
+      type: "image",
+      svg: <PiVideoFill color={"#FF0B55"} />,
+      input: <input onChange={handleMediaChange} id="image" type="file" accept="video/*" hidden multiple />
+    },
+    {
+      type: "audio",
+      svg: <MdOutlineAudiotrack color={"#273F4F"} />,
+      input: <input onChange={handleMediaChange} id="audio" type="file" accept="audio/*" hidden multiple />
+    },
+
+    {
+      type: "document",
+      svg: <IoDocumentText color={"#40A2E3"} />,
+      input: <input onChange={handleMediaChange} id="document" type="file" accept="application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain" hidden multiple />
+    }
+  ]
+
+  const size = useResize()
+  const mediaAttachmentRef = useRef<HTMLDivElement>(null);
+  const [mediaPopupPosition, setMediaPopupPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  useEffect(() => {
+    if (mediaAttachmentRef.current) {
+      const { x, y } = mediaAttachmentRef.current.getBoundingClientRect();
+      console.log("bounding: ", mediaAttachmentRef.current.getBoundingClientRect())
+      setMediaPopupPosition({ x, y })
+    }
+  }, [size])
+  const MediaPopup: React.FC = () => {
+    return (
+      <div
+        // style={{ position: "fixed", top: mediaPopupPosition.y - 72, left: mediaPopupPosition.x }}
+        className="flex gap-2 dark:bg-whit bg-blac border-[#627254] border bg-[#EEF7FF] w-fit p-1 rounded-lg
+">
+        {
+          mediaInputList.map(({ type, svg, input }) => {
+            return <div key={type}>
+              <div className="max-[600px]:p-1 p-0.5 rounded [&_svg]:cursor-pointer [&_svg]:size-6.5 btn-effect">
+                <label htmlFor={type}>
+                  {svg}
+                  {input}
+                </label>
+              </div>
+            </div>
+          })
+        }
+      </div>
+    )
+  }
+
+
+  const [isMedia, setIsMedia] = useState<boolean>(false)
 
   return (
     <div>
@@ -794,6 +893,14 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
                 className="w-full text-[0.97rem] outline-none bg-transparent placeholder:text-gray-500 text-gray-700 "
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({
+                      // behavior: "smooth",
+                      block: "center",
+                    });
+                  }, 200);
+                }}
               />
             </div>
             <div>
@@ -854,6 +961,7 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
               <div
                 className="relative"
                 onClick={() => {
+                  setIsMedia(false)
                   setIsImageInput((prev) => !prev);
                 }}
               >
@@ -867,6 +975,14 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
               >
                 😊
               </div>
+
+              <div ref={mediaAttachmentRef} onClick={() => {
+                setIsImageInput(false)
+                setIsMedia(prev => !prev)
+                }}>
+                <CgAttachment size={21} color={"#2563eb"} className="p-0.5" />
+              </div>
+
             </div>
             <div className="absolute top-full flex items-center w-full h-full gap-2 cursor-pointer">
               {/* unFormatting button */}
@@ -902,7 +1018,7 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         )}
         {isImageInput && (
           <div
-            className={`absolute z-10  px-2 py-1 dark:bg-white bg-black text-white dark:text-black border border-[#e0e0e0] rounded ${isImageUrlInput ? "bottom-1  right-1 " : "-top-4 left-20"
+            className={`absolute z-10  px-2 py-1 dark:bg-white bg-black text-white dark:text-black border border-[#e0e0e0] rounded ${isImageUrlInput ? "bottom-1  right-1 " : "-top-5 left-18"
               }  `}
           >
             {!isImageUrlInput && (
@@ -1022,6 +1138,9 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
             )}
           </div>
         )}
+        {isMedia && <div style={{ left: mediaPopupPosition.x + 10}} className="absolute z-10 -top-5.5">
+          <MediaPopup />
+          </div>}
       </div>
     </div>
   );

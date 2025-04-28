@@ -12,28 +12,6 @@ import { stateToHTML } from "draft-js-export-html";
 
 import hljs from "highlight.js";
 
-
-// export const insertImage = (editorState: EditorState, url: string) => {
-//   const contentState = editorState.getCurrentContent();
-//   const contentStateWithEntity = contentState.createEntity(
-//     "IMAGE",
-//     "IMMUTABLE",
-//     { src: url }
-//   );
-//   const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-//   const newEditorState = EditorState.set(editorState, {
-//     currentContent: contentStateWithEntity,
-//   });
-//   return {
-//     newEditorState: AtomicBlockUtils.insertAtomicBlock(
-//       newEditorState,
-//       entityKey,
-//       " "
-//     ),
-//     entityKey,
-//   };
-// };
-
 export const insertImage = (editorState: EditorState, url: string) => {
   // Get current content of the editor
   const contentState = editorState.getCurrentContent();
@@ -68,10 +46,15 @@ export const insertImage = (editorState: EditorState, url: string) => {
   };
 };
 
+type Src = {
+  src?: string
+  name?: string
+  fileType?:string
+}
 export const insertMedia = (
   editorState: EditorState,
   mediaType: string,
-  src: string | object
+  src: string | Src
 ) => {
   const contentState = editorState.getCurrentContent();
   const contentStateWithEntity = contentState.createEntity(
@@ -153,7 +136,7 @@ export const handleDraftToHtml = (postJson: string) => {
 
         if (entityKey) {
           const entity = contentState.getEntity(entityKey);
-          const { src, name, className } = entity.getData();
+          const { src, name, className, fileType } = entity.getData();
 
           if (entity.getType() === "IFRAME") {
             // Render the iframe HTML tag
@@ -174,7 +157,7 @@ export const handleDraftToHtml = (postJson: string) => {
             return `
 		<div class="relative">
 		  <img src="${src}"  alt="embeded image" class="${className}" />
-		  ${!/sticker/.test(className) ? buttons(src, name) : ""}
+		  ${!/sticker|gif/.test(className) ? buttons(src, name) : ""}
 		</div>`
 	 ;
           }
@@ -185,7 +168,7 @@ export const handleDraftToHtml = (postJson: string) => {
             </audio>`;
           }
           if (entity.getType() === "VIDEO") {
-            return `<video controls>
+            return `<video style="width: 100%; max-width: 334px; aspect-ratio: 16/9" controls >
               <source src="${src}" />
  
             </video>`;
@@ -202,12 +185,13 @@ export const handleDraftToHtml = (postJson: string) => {
             </a>`;
           }
           if (entity.getType() === "FILE") {
-            return `<div class="file-container">
-              <span class="file-name">${name}</span>
+            return `<div class="relative border !border-black/50 bg-black/50 file-container">
+              <span class="absolute top-0 text-xs text-rose-500 ">${fileType?.split(/[/]/)?.at(-1) || ""}</span>
+              <span class="file-name my-2">${name}</span>
               <div class="dropdown">
                 <button class="menu-button">⋮</button>
-                <div class="dropdown-content">
-                  <a href="${src}" target="_blank" download="${name}" class="download-option">⬇️ Download</a>
+                <div class="rounded dropdown-content">
+                  <a href="${src}" target="_blank" download="${name}" class="btn-effect download-option select-none rounded">⬇️ Download</a>
                 </div>
               </div>
             </div>`;
@@ -277,14 +261,16 @@ export const handleDraftToHtml = (postJson: string) => {
       "src",
       "width",
       "height",
+"href",
     ],
     ADD_TAGS: ["iframe"],
     FORBID_TAGS: ["script"],
     ALLOW_ARIA_ATTR: true,
     FORBID_ATTR: ["onload", "onclick"], // Disallow inline event handlers
     ALLOWED_URI_REGEXP:
-      /^(?:(?:(?:https?|mailto|ftp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))|data:image\/)/i, // Ensure safe URIs
+      /^(?:(?:(?:https?|mailto|ftp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))|data:(text\/.*|application\/.*|image\/.*))/i, // Ensure safe URIs
   };
-  // htmlDocs = DOMPurify.sanitize(htmlDocs, purifyConfig);
+
+  htmlDocs = DOMPurify.sanitize(htmlDocs, purifyConfig);
   return htmlDocs;
 };

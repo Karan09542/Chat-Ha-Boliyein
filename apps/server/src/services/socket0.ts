@@ -28,9 +28,46 @@ class SocketService {
       maxHttpBufferSize: 1e8,
     });
 
-    this.pubClient = new Redis(REDIS_URL);
+    this.pubClient = new Redis(REDIS_URL, {
+	retryStrategy(times) {
+    const delay = Math.min(times * 100, 3000); // exponential backoff (up to 3s)
+    console.log(`[Redis] Retry #${times} in ${delay}ms`);
+    return delay;
+  },
+  reconnectOnError(err) {
+    const msg = err?.message || '';
+    if (msg.includes('READONLY') || msg.includes('ECONNRESET')) {
+      console.warn('[Redis reconnectOnError]', msg);
+      return true;
+    }
+    return false;
+  },
+    });
     this.subClient = new Redis(REDIS_URL);
-    console.log("redis_url: ", REDIS_URL);
+
+    // ⚠️ Critical to avoid crashes
+// handle error pubClient
+this.pubClient.on("error", (err) => {
+  console.error("[Redis] Unhandled Error:", err);
+});
+
+// Optional logs
+this.pubClient.on("connect", () => {
+  console.log("[Redis] Connected");
+});
+
+this.pubClient.on("close", () => {
+  console.warn("[Redis] Connection closed");
+});
+
+this.pubClient.on("reconnecting", (time:number) => {
+  console.log(`[Redis] Reconnecting in ${time}ms`);
+});
+
+// handle error subClient
+this.subClient.on("error", (err) => {
+  console.error("[Redis - subClient] Unhandled Error:", err);
+});
 
     this.setupRedis();
   }
@@ -50,14 +87,14 @@ class SocketService {
   createRoom = (socket: Socket, roomId: string, username: string = "") => {
     socket.join(roomId);
     this.rooms[roomId] = {
-      admin: socket.id, 
-      adminInfo: {username},
+      admin: socket.id,
+      adminInfo: { username },
       users: new Set<string>([socket.id]),
       pendingUsers: new Set<string>(),
     };
     this.roomSession(socket, roomId, username);
-    socket.emit("room-created", { roomId });
-    console.log(this.rooms)
+    socket.emit("room-created", roomId);
+    // console.log(this.rooms)
   };
 
 
@@ -79,6 +116,8 @@ class SocketService {
       this.subClient.subscribe("feedback");
       this.subClient.subscribe("room-feedback");
 
+      this.subClient.subscribe("admin-gone");
+
 
       console.log("✅ Connected to Redis");
     } catch (error) {
@@ -95,7 +134,9 @@ class SocketService {
         await this.pubClient.publish("client-total", `${this._clients.size}`);
       }
 
-
+      socket.on("get-total-clients", async () => {
+        await this.pubClient.publish("client-total", `${this._clients.size}`)
+      })
 
       const getRoomSize = (roomId: string) => {
         const room = io.sockets.adapter.rooms.get(roomId);
@@ -107,7 +148,7 @@ class SocketService {
       socket.on("create-room", async (roomName: string, username?: string) => {
         const roomId: string = roomName || nanoid();
         if (this.rooms[roomId]) {
-          socket.emit("room-exist", `Room "${roomId}" already exists`);
+          socket.emit("room-already-exist", `Room "${roomId}" already exists`);
           return;
         }
 
@@ -117,24 +158,31 @@ class SocketService {
       socket.on("get-room-admin", async (roomId: string) => {
         const room = this.rooms[roomId];
         if (room) {
-          let username:string = room.adminInfo.username;
-          socket.to(roomId).emit("room-admin", username);
+          let username: string = room.adminInfo.username;
+          socket.emit("room-admin", username);
         }
       })
 
 
       // Request to join room
-      socket.on("request-join-room", async (roomId: string, username) => {
-        if(this.rooms[roomId].admin === socket.id || this.rooms[roomId].users.has(socket?.id)) return;
+      socket.on("request-join-room", async ({ roomId, username }: {
+        roomId: string, username?: string
+      }) => {
 
-        if (this.rooms[roomId]) {
-          this.rooms[roomId].pendingUsers.add(socket.id);
-          const adminSocketId = this.rooms[roomId].admin;
-          console.log("room exists: ",this.rooms[roomId]);
-          await this.pubClient.publish("user-join-request", JSON.stringify({ adminSocketId, roomId, username, userId: socket.id }));
+        if (!this.rooms[roomId]) {
+          return socket.emit("room-not-exist", `Room "${roomId}" not exists`);
         } else {
-          socket.emit("room-not-exist", `Room "${roomId}" not exists`);
+          socket.emit("room-exist")
         }
+        const isAdmin = this.rooms[roomId]?.admin === socket.id;
+
+        if (isAdmin || this.rooms[roomId]?.users?.has(socket?.id)) return socket.emit("user-already-in-room", { roomId });
+
+
+        this.rooms[roomId]?.pendingUsers.add(socket.id);
+        const adminSocketId = this.rooms[roomId].admin;
+        await this.pubClient.publish("user-join-request", JSON.stringify({ adminSocketId, roomId, username, userId: socket.id }));
+
       });
 
       // Admin approve user to join room
@@ -148,7 +196,10 @@ class SocketService {
 
             await this.pubClient.publish("user-join-approved", JSON.stringify({ userId, roomId }));
           } else {
-            socket.emit("error", "User is not pending for approval");
+            socket.emit("error", {
+              type: "GENERAL",
+              message: "User is not pending for approval"
+            });
           }
         }
       })
@@ -156,17 +207,23 @@ class SocketService {
       // join room
       socket.on("join-room", async (roomId, username) => {
         if (!roomId) {
-          socket.emit("error", "Invalid room ID to join");
+          socket.emit("error", {
+            type: "GENERAL",
+            message: "Invalid room ID to join"
+          });
           return;
         }
-
         if (!this.rooms[roomId]) {
           socket.emit("room-not-exist", `Room "${roomId}" not exists`);
           return;
         }
         if (!this.rooms[roomId].users.has(socket.id)) {
-          const isPending = this.rooms[roomId].pendingUsers.has(socket.id);
-          socket.emit("error", isPending ? "You are pending for approval" : "You are not in this room");
+          const isPending = this.rooms[roomId]?.pendingUsers.has(socket.id);
+          socket.emit("error", {
+            type: isPending ? "PENDING_APPROVAL" : "NOT_IN_ROOM",
+            message: isPending ? "You are pending for approval" : "You are not in this room"
+
+          });
           return;
         }
         socket.join(roomId);
@@ -202,12 +259,14 @@ class SocketService {
           );
 
           if (!roomId) {
-            socket.emit("error", "Invalid room ID to leave");
+            socket.emit("error", {
+              type: "GENERAL",
+              message: "Invalid room ID to leave"
+            });
             return;
           }
           // const userIdx = this.rooms[roomId].users.indexOf(socket.id);
-          this.rooms[roomId].users.delete(socket.id);
-          if(this.rooms[roomId].users.size === 0) delete this.rooms[roomId]; 
+          if (this.rooms[roomId]?.users.size === 0) delete this.rooms[roomId];
 
           socket.leave(roomId);
           await this.pubClient.publish(
@@ -235,6 +294,18 @@ class SocketService {
 
       // send message to room
       socket.on("room:message", async ({ roomId, message }) => {
+        if (!this.rooms[roomId]) {
+          return socket.emit("room-not-exist", `Room "${roomId}" not exists`);
+        }
+        if (!this.rooms[roomId].users.has(socket.id)) {
+          const isPending = this.rooms[roomId].pendingUsers.has(socket.id);
+          socket.emit("error", {
+            type: isPending ? "PENDING_APPROVAL" : "NOT_IN_ROOM",
+            message: isPending ? "You are pending for approval" : "You are not in this room"
+
+          });
+          return;
+        }
         await this.pubClient.publish(
           "room-message",
           JSON.stringify({ message, roomId })
@@ -272,6 +343,10 @@ class SocketService {
             const RoOm = this.rooms[roomId];
             // const userIdx = RoOm.users.indexOf(socket.id);
             RoOm.users.delete(socket.id);
+	    if(RoOm.admin === socket.id) {
+		await this.pubClient.publish("admin-gone", JSON.stringify({ roomId }))
+	    }
+            if (RoOm.users.size === 0) delete this.rooms[roomId];
             // end new code
 
             await this.pubClient.publish(
@@ -326,7 +401,7 @@ class SocketService {
 
       if (channel === "user-join-rejected") {
         const { userId, roomId } = JSON.parse(message);
-        io.to(userId).emit("user-join-rejected", {message: `you have been rejected to join the room ${roomId}`});
+        io.to(userId).emit("user-join-rejected", { message: `you have been rejected to join the room ${roomId}` });
       }
 
 
@@ -362,6 +437,11 @@ class SocketService {
       if (channel === "room-feedback") {
         const { socketId, roomId, username } = JSON.parse(message);
         io.to(roomId).except(socketId).emit("room-feedback", username);
+      }
+
+      if (channel === "admin-gone") {
+	const {roomId} = JSON.parse(message)
+	io.to(roomId).emit("admin-gone", { roomId })
       }
 
     });

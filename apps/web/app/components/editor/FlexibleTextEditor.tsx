@@ -14,7 +14,7 @@ import {
   RichUtils,
   SelectionState,
   genKey,
-  ContentState, 
+  ContentState,
   convertToRaw
 } from "draft-js";
 import "draft-js/dist/Draft.css";
@@ -33,7 +33,7 @@ interface FlexibleTextEditorProps {
   placeholder: string;
   isPlaceholder: boolean;
   editorState: EditorState;
-  setEditorState: (editorState: EditorState) => void;
+  setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
   isPopoverVisible: boolean;
   setPopoverVisible: (isPopoverVisible: boolean) => void;
   popoverPosition: {
@@ -106,6 +106,8 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     setEditorState(RichUtils.toggleBlockType(editorState, type));
   };
   const keyBindingFn = (e: any) => {
+    // Step 1: Check if the user is holding down the shift key
+
     if (e.shiftKey && e.key === "C") {
       // getCurrentContent(), getSelection(), getBlockForKey, getStartKey, getText
 
@@ -169,25 +171,15 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   // Handle custom commands in handleKeyCommand
   const getCurrentBlockType = () => {
     const selection = editorState.getSelection();
-        if (!selection || selection.isCollapsed()) return;
+    if (!selection || selection.isCollapsed()) return;
     const contentState = editorState.getCurrentContent();
     const blockKey = selection?.getStartKey();
     const block = contentState?.getBlockForKey(blockKey);
     return block?.getType(); // Returns the type of the current block
   };
 
-  // const hasInlineStyleOf = (editorState: EditorState, style: string) => {
-  //   const currentStyle = editorState.getCurrentInlineStyle();
-  //   return currentStyle?.has(style);
-  // };
-
-  // const isH1 = () => getCurrentBlockType() === "header-one";
   const isOL = () => getCurrentBlockType() === "ordered-list-item";
   const isUL = () => getCurrentBlockType() === "unordered-list-item";
-  // const isBlockquote = () => getCurrentBlockType() === "blockquote";
-  // const isBold = () => hasInlineStyleOf(editorState, "BOLD");
-  // const isItalic = () => hasInlineStyleOf(editorState, "ITALIC");
-  // const isCode = () => hasInlineStyleOf(editorState, "code-block");
 
   const handleKeyCommand = (command: string, editorState: EditorState) => {
     // Function to handle the tab action
@@ -328,9 +320,22 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         return "handled";
       }
 
-      // case "backspace": {
-      //   // return "handled";
-      // }
+      case "backspace":
+      case "delete": {
+        const selection = editorState.getSelection();
+        const content = editorState.getCurrentContent();
+        const key = selection.getStartKey();
+        const block = content.getBlockForKey(key);
+
+        // अगर current block atomic है, और cursor उसकी शुरुआत में है
+        if (block.getType() === "atomic") {
+          console.log("Prevent atomic delete");
+
+          // बस default behavior को रोक दो
+          return "handled";
+        }
+      }
+
 
       default:
         return "not-handled";
@@ -368,48 +373,17 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     });
   };
 
-  const [isComposing, setIsComposing] = React.useState(false);
-
-/* const handleCompositionStart = () => {
-  // console.log("start")
-   const cs = editorState.getCurrentContent()
-   // const em = cs.getEntityMap()
-console.log("cs ", convertToRaw(cs))
-  setIsComposing(true);
-};
-
-const handleCompositionEnd = () => {
-  console.log("end")
-  setIsComposing(false);
-  // Perform actions that were deferred during composition
-  // For example, trigger suggestion selection if necessary
-};
-React.useEffect(() => {
-  if(!ref?.current) return;
-  const node = ref?.current?.editor;
-  if (node) {
-    node.addEventListener('compositionstart', handleCompositionStart);
-    node.addEventListener('compositionend', handleCompositionEnd);
-  }
-
-  return () => {
-    if (node) {
-      node.removeEventListener('compositionstart', handleCompositionStart);
-      node.removeEventListener('compositionend', handleCompositionEnd);
-    }
-  };
-}, []); */
   const handleEditorChange = (newEditorState: EditorState) => {
     // console.log("entityMap ", newEditorState.getCurrentContent()?.entityMap?.getLastCreatedEntityKey())
     setEditorState(newEditorState);
     const plainText = newEditorState.getCurrentContent().getPlainText();
     setIsPostContent(/\S/.test(plainText))
 
-/* const cs = editorState.getCurrentContent()
-console.log("handleEcs ", convertToRaw(cs))
-    console.log("working")
-    if(isComposing) return;
-    console.log("working after") */
+    /* const cs = editorState.getCurrentContent()
+    console.log("handleEcs ", convertToRaw(cs))
+        console.log("working")
+        if(isComposing) return;
+        console.log("working after") */
 
     const selection = newEditorState.getSelection();
     const anchorKey = selection.getAnchorKey();
@@ -430,13 +404,13 @@ console.log("handleEcs ", convertToRaw(cs))
       setMensionInput && setMensionInput(mensionInput);
 
       setPopoverVisible(true);
-	
-           try{
-	const elementAtCursor = getElementAtCursor();
-     } catch(error) {
-	console.warn("Failed to get element at cursor:", error)
-     }	
-      
+
+      try {
+        const elementAtCursor = getElementAtCursor();
+      } catch (error) {
+        console.warn("Failed to get element at cursor:", error)
+      }
+
     } else setPopoverVisible(false);
   };
   const handleSelectSuggestion = (suggestion: MensionUser) => {
@@ -530,46 +504,38 @@ console.log("handleEcs ", convertToRaw(cs))
     );
   };
   const blockRendererFn = (block: ContentBlock) => {
-    const contentState = editorState.getCurrentContent();
-    let entityType;
 
-    const selectionState = editorState.getSelection();
-    const startOffset = selectionState.getStartOffset();
-    const stylesAtOffset = block.getInlineStyleAt(startOffset);
+    // console.log("block-type: ",block.getType())
+    if (block.getType() === "atomic") {
+      const cs = editorState.getCurrentContent();
+      const entityKey = block.getEntityAt(0);
+      if (!entityKey) return null;
+      const entity = cs.getEntity(entityKey);
+      const entityType = entity.getType();
 
-    block.findEntityRanges(
-      (character) => {
-        if (character.getEntity()) {
-          entityType = contentState.getEntity(character.getEntity()).getType();
-          return true;
-        }
-        return false;
-      },
-      () => null
-    );
-
-    // block.getType() i.e. "atomic"
-    if (entityType) {
       switch (entityType) {
         case "IMAGE":
-	case "IFRAME":
-	case "VIDEO":
-	case "AUDIO":
-	case "FILE":
+        case "IFRAME":
+        case "VIDEO":
+        case "AUDIO":
+        case "FILE":
           return {
             component: MediaComponent,
-            editable: false,
+            editable: true,
             props: {
               onRemove: (blockKey: string) => {
                 const newEditorState = removeAtomicBlock(editorState, blockKey);
                 setEditorState(newEditorState);
               },
+              mediaData: cs.getEntity(block.getEntityAt(0)).getData(),
             },
           };
         default:
           return null;
       }
+
     }
+
     return null;
   };
 
@@ -593,78 +559,87 @@ console.log("handleEcs ", convertToRaw(cs))
   const Video_link_REGEX =
     /https?:\/\/[^\s]+?\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv)(\?.*)?$/;
   const handlePastedFiles = (files: File[]) => {
-    const file = files[0];
+    if (!files || files.length === 0) return "not-handled";
 
-    if (!file) return "not-handled";
-    // for image
-    if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
+    for (let file of files) {
+      if (!file) continue;
 
-      reader.onload = () => {
-        const imageSrc = reader.result; // Base64 image data
-        if (imageSrc && typeof imageSrc === "string") {
-          const { newEditorState } = insertImage(editorState, imageSrc);
+      // for image
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
 
-          setEditorState(newEditorState);
-        }
-      };
+        reader.onload = () => {
+          const imageSrc = reader.result; // Base64 image data
+          if (imageSrc && typeof imageSrc === "string") {
+            setEditorState((prevEditorState) => {
+              const { newEditorState } = insertImage(prevEditorState, imageSrc);
+              return newEditorState;
+            });
+          }
+        };
 
-      reader.readAsDataURL(file);
-      return "handled"; // Prevent default handling
-    }
-    // for video
-    if (file.type.startsWith("video/")) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const videoSrc = reader.result;
-        if (videoSrc && typeof videoSrc === "string") {
-          const { newEditorState } = insertMedia(
-            editorState,
-            "VIDEO",
-            videoSrc
-          );
-          setEditorState(newEditorState);
-        }
-      };
-      reader.readAsDataURL(file);
-      return "handled";
-    }
-    // for audio
-    if (file.type.startsWith("audio/")) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const audioSrc = reader.result;
-        if (audioSrc && typeof audioSrc === "string") {
-          const { newEditorState } = insertMedia(
-            editorState,
-            "AUDIO",
-            audioSrc
-          );
-          setEditorState(newEditorState);
-        }
-      };
-      reader.readAsDataURL(file);
-      return "handled";
-    }
+        reader.readAsDataURL(file);
+        continue;
+      }
+      // for video
+      if (file.type.startsWith("video/")) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const videoSrc = reader.result;
+          if (videoSrc && typeof videoSrc === "string") {
+            setEditorState(prevEditorState => {
+              const { newEditorState } = insertMedia(
+                prevEditorState,
+                "VIDEO",
+                videoSrc
+              );
+              return newEditorState;
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+        continue;
+      }
+      // for audio
+      if (file.type.startsWith("audio/")) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const audioSrc = reader.result;
+          if (audioSrc && typeof audioSrc === "string") {
+            setEditorState(prevEditorState=>{
+              const { newEditorState } = insertMedia(
+                prevEditorState,
+                "AUDIO",
+                audioSrc
+              );
+              return newEditorState
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+        continue;
+      }
 
-    // any other file
-    if (file.type.startsWith("application/") || file.type.startsWith("text/")) {
+      // any other file
+      // .startsWith("application/") || file.type.startsWith("text/")
       const reader = new FileReader();
       reader.onload = () => {
         const fileSrc = reader.result;
         if (fileSrc && typeof fileSrc === "string") {
-          const { newEditorState } = insertMedia(editorState, "FILE", {
-            src: fileSrc,
-            name: file.name,
+          setEditorState(prevEditorState=>{
+            const { newEditorState } = insertMedia(prevEditorState, "FILE", {
+              src: fileSrc,
+              name: file.name,
+            });
+            return newEditorState
           });
-          setEditorState(newEditorState);
         }
       };
       reader.readAsDataURL(file);
-      return "handled";
+      continue
     }
 
-    return "not-handled";
+    return "handled";
   };
   const handlePastedText = (
     text: string,
@@ -698,279 +673,89 @@ console.log("handleEcs ", convertToRaw(cs))
     return "not-handled"; // Let other pasted content proceed as normal
   };
 
+  function handleBeforeInput(chars: string, editorState: EditorState, _eventTimeStamp: number, { setEditorState }: { setEditorState: (editorState: EditorState) => void }) {
+    const selection = editorState.getSelection();
+    const contentState = editorState.getCurrentContent();
+    const blockKey = selection.getStartKey();
+    const block = contentState.getBlockForKey(blockKey);
 
-function safelyExitAtomicBlock(editorState: EditorState): EditorState | null {
-  const selection = editorState.getSelection();
-  const contentState = editorState.getCurrentContent();
-  const blockKey = selection.getStartKey();
-  const block = contentState.getBlockForKey(blockKey);
+    if (block.getType() === 'atomic') {
+      // नया empty block बनाओ manually (unstyled type)
+      const newBlockKey = genKey();
+      const blockMap = contentState.getBlockMap();
+      const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
+      const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
 
-  if (block.getType() !== 'atomic') return null;
+      const newBlock = new ContentBlock({
+        key: newBlockKey,
+        type: 'unstyled',
+        text: '',
+        characterList: List(),
+      });
 
-  const newBlockKey = genKey();
-  const blockMap = contentState.getBlockMap();
-  const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
-  const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
+      // const newBlockMap = blocksBefore.concat([[blockKey, block], [newBlockKey, newBlock]], blocksAfter).toOrderedMap();
 
-const isAtStart = selection.isCollapsed() && selection.getStartOffset() === 0;
-if (!isAtStart) {
-  return null;
-}
+      /* const newBlockMap = blocksBefore
+        .concat([[newBlockKey, newBlock]])
+        .concat(blocksAfter)
+        .toOrderedMap();
+          const newContentState = contentState.merge({
+            blockMap: newBlockMap,
+            selectionAfter: selection,
+          }); */
 
-  const newBlock = new ContentBlock({
-    key: newBlockKey,
-    type: 'unstyled',
-    text: '',
-    characterList: List(),
-  });
+      const newBlockMap = blocksBefore
+        .concat([[blockKey, block], [newBlockKey, newBlock]]) // 👈 this is safer
+        .concat(blocksAfter)
+        .toOrderedMap();
 
-  const newBlockMap = blocksBefore
-    .concat([[blockKey, block], [newBlockKey, newBlock]])
-    .concat(blocksAfter)
-    .toOrderedMap();
+      // 🛠 यह missing था:
+      const newContentState = contentState.merge({
+        blockMap: newBlockMap,
+        selectionAfter: selection,
+      }) as ContentState;
 
-  const newContentState = contentState.merge({
-    blockMap: newBlockMap,
-    selectionAfter: selection,
-  }) as typeof contentState;
+      const newSelection = SelectionState.createEmpty(newBlockKey);
+      const newEditorState = EditorState.push(editorState, newContentState as ContentState, 'split-block');
+      const finalEditorState = EditorState.forceSelection(newEditorState, newSelection);
 
-  const newSelection = SelectionState.createEmpty(newBlockKey);
-  const newEditorState = EditorState.push(editorState, newContentState, 'split-block');
-
-  return EditorState.forceSelection(newEditorState, newSelection);
-}
-
-
-
-// function handleBeforeInput(chars: string, editorState:EditorState, _eventTimeStamp: number, { setEditorState }: { setEditorState: (editorState: EditorState) => void }) {
-//   const selection = editorState.getSelection();
-//   const contentState = editorState.getCurrentContent();
-//   const blockKey = selection.getStartKey();
-//   const block = contentState.getBlockForKey(blockKey);
-
-//   if (block.getType() === 'atomic') {
-//     // नया empty block बनाओ manually (unstyled type)
-// //     const newBlockKey = genKey();
-// //     const blockMap = contentState.getBlockMap();
-// //     const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
-// //     const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
-
-// //     const newBlock = new ContentBlock({
-// //       key: newBlockKey,
-// //       type: 'unstyled',
-// //       text: '',
-// //       characterList: List(),
-// //     });
-
-// //     // const newBlockMap = blocksBefore.concat([[blockKey, block], [newBlockKey, newBlock]], blocksAfter).toOrderedMap();
-
-// // /* const newBlockMap = blocksBefore
-// //   .concat([[newBlockKey, newBlock]])
-// //   .concat(blocksAfter)
-// //   .toOrderedMap();
-// //     const newContentState = contentState.merge({
-// //       blockMap: newBlockMap,
-// //       selectionAfter: selection,
-// //     }); */
-
-// //   const newBlockMap = blocksBefore
-// //   .concat([[blockKey, block], [newBlockKey, newBlock]]) // 👈 this is safer
-// //   .concat(blocksAfter)
-// //   .toOrderedMap();
-
-// //    // 🛠 यह missing था:
-// //    const newContentState = contentState.merge({
-// //     blockMap: newBlockMap,
-// //     selectionAfter: selection,
-// //   }) as ContentState;
-
-// //     const newSelection = SelectionState.createEmpty(newBlockKey);
-// //     const newEditorState = EditorState.push(editorState, newContentState as ContentState, 'split-block');
-// //     const finalEditorState = EditorState.forceSelection(newEditorState, newSelection);
-
-// //     setEditorState(finalEditorState);
-//     return 'handled';
-//   }
-
-//   return 'not-handled';
-// }
-
-// function handleBeforeInput(
-//   chars: string,
-//   editorState: EditorState,
-//   _eventTimeStamp: number,
-//   { setEditorState }: { setEditorState: (editorState: EditorState) => void }
-// ) {
-//   const selection = editorState.getSelection();
-//   const contentState = editorState.getCurrentContent();
-//   const blockKey = selection.getStartKey();
-//   const block = contentState.getBlockForKey(blockKey);
-// console.log({chars})
-//   if (block.getType() === 'atomic') {
-//     // ✅ Ignore during composition
-//     if (isComposingRef.current) return 'not-handled';
-
-//     const newBlockKey = genKey();
-//     const blockMap = contentState.getBlockMap();
-//     const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
-//     const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
-
-//     const newBlock = new ContentBlock({
-//       key: newBlockKey,
-//       type: 'unstyled',
-//       text: '',
-//       characterList: List(),
-//     });
-
-//     const newBlockMap = blocksBefore
-//       .concat([[blockKey, block], [newBlockKey, newBlock]])
-//       .concat(blocksAfter)
-//       .toOrderedMap();
-
-//     const newContentState = contentState.merge({
-//       blockMap: newBlockMap,
-//       selectionAfter: selection,
-//     }) as ContentState;
-
-//     const newSelection = SelectionState.createEmpty(newBlockKey);
-//     const newEditorState = EditorState.push(editorState, newContentState, 'split-block');
-//     const finalEditorState = EditorState.forceSelection(newEditorState, newSelection);
-
-//     setEditorState(finalEditorState);
-//     return 'handled';
-//   }
-
-//   return 'not-handled';
-// }
-
-// const isComposingRef = React.useRef(false);
-// const atomicBlocksRef = React.useRef(new Map());
-
-// React.useEffect(() => {
-//   const domNode = ref?.current?.editor;
-//   if (!domNode) return;
-
-//   const handleCompositionStart = () => {
-//     console.log("composition start");
-//     isComposingRef.current = true;
-
-//     const atomicBlocks = new Map();
-//     const contentState = editorState.getCurrentContent();
-
-//     contentState.getBlockMap().forEach((block) => {
-//       if (block.getType() === 'atomic') {
-//         atomicBlocks.set(block.getKey(), block);
-//       }
-//     });
-
-//     atomicBlocksRef.current = atomicBlocks;
-//   };
-
-//   const handleCompositionEnd = () => {
-//     console.log("composition end");
-//     isComposingRef.current = false;
-
-//     const contentState = editorState.getCurrentContent();
-//     let blockMap = contentState.getBlockMap();
-//     let didRestore = false;
-
-//     atomicBlocksRef.current.forEach((block, key) => {
-//       if (!blockMap.has(key)) {
-//         blockMap = blockMap.set(key, block);
-//         didRestore = true;
-//       }
-//     });
-
-//     if (didRestore) {
-//       const newContentState = contentState.merge({ blockMap }) as ContentState;
-
-//       const newEditorState = EditorState.push(
-//         editorState,
-//         newContentState,
-//         'change-block-data'
-//       );
-
-//       // Force selection reset to avoid ghost cursor
-//       const selection = newEditorState.getSelection();
-//       const forcedEditorState = EditorState.forceSelection(newEditorState, selection);
-
-//       setEditorState(forcedEditorState);
-//     }
-//   };
-
-//   domNode.addEventListener("compositionstart", handleCompositionStart);
-//   domNode.addEventListener("compositionend", handleCompositionEnd);
-
-//   return () => {
-//     domNode.removeEventListener("compositionstart", handleCompositionStart);
-//     domNode.removeEventListener("compositionend", handleCompositionEnd);
-//   };
-// }, [editorState]);
-
-// React.useEffect(() => {
-//   if(!ref?.current) return
-//   const editorDOM = ref.current?.editor;
-
-//   if (!editorDOM) {
-//     console.warn("Editor DOM not found");
-//     return;
-//   }
-
-//   const handleCompositionStart = () => {
-//     console.log("🟡 Composition Started (IME typing started)");
-//   };
-
-//   const handleCompositionUpdate = (e: any) => {
-//     console.log("✏️ IME intermediate value:", e.data);
-//   };
-
-//   const handleCompositionEnd = (e: any) => {
-//     console.log("🟢 Composition Ended. Final value:", e.data);
-//     // Optional: manually update editorState if needed
-//   };
-
-//   editorDOM.addEventListener("compositionstart", handleCompositionStart);
-//   editorDOM.addEventListener("compositionupdate", handleCompositionUpdate);
-//   editorDOM.addEventListener("compositionend", handleCompositionEnd);
-
-//   return () => {
-//     editorDOM.removeEventListener("compositionstart", handleCompositionStart);
-//     editorDOM.removeEventListener("compositionupdate", handleCompositionUpdate);
-//     editorDOM.removeEventListener("compositionend", handleCompositionEnd);
-//   };
-// }, []);
-
-
-React.useEffect(() => {
-    const contentDiv = document.querySelector(".public-DraftEditor-content");
-
-    const handleCompositionStart = () => {
-      console.log("Composition started");
-      setIsComposing(true);
-    };
-
-    const handleCompositionEnd = () => {
-      console.log("Composition ended");
-      setIsComposing(false);
-    };
-
-    if (contentDiv) {
-      contentDiv.addEventListener("compositionstart", handleCompositionStart);
-      contentDiv.addEventListener("compositionend", handleCompositionEnd);
+      setEditorState(finalEditorState);
+      return 'handled';
     }
 
-    return () => {
-      if (contentDiv) {
-        contentDiv.removeEventListener("compositionstart", handleCompositionStart);
-        contentDiv.removeEventListener("compositionend", handleCompositionEnd);
-      }
-    };
-  }, [ref]);
+    return 'not-handled';
+  }
+
+  // React.useEffect(() => {
+  //   const contentDiv = document.querySelector(".public-DraftEditor-content");
+
+  //   const handleCompositionStart = () => {
+  //     console.log("Composition started");
+  //     setIsComposing(true);
+  //   };
+
+  //   const handleCompositionEnd = () => {
+  //     console.log("Composition ended");
+  //     setIsComposing(false);
+  //   };
+
+  //   if (contentDiv) {
+  //     contentDiv.addEventListener("compositionstart", handleCompositionStart);
+  //     contentDiv.addEventListener("compositionend", handleCompositionEnd);
+  //   }
+
+  //   return () => {
+  //     if (contentDiv) {
+  //       contentDiv.removeEventListener("compositionstart", handleCompositionStart);
+  //       contentDiv.removeEventListener("compositionend", handleCompositionEnd);
+  //     }
+  //   };
+  // }, [ref]);
 
   return (
     <>
       <Editor
-	ref={ref}
+        ref={ref}
         placeholder={isPlaceholder ? placeholder || "Type something..." : ""}
         handleKeyCommand={handleKeyCommand}
         keyBindingFn={keyBindingFn}
@@ -981,27 +766,9 @@ React.useEffect(() => {
         customStyleMap={customStyleMap}
         handlePastedText={handlePastedText}
         handlePastedFiles={handlePastedFiles}
-	onFocus={handleFocus}
-	onBlur={handleBlur}
-	// handleBeforeInput={(...args) => handleBeforeInput(...args, { setEditorState })}
-
-/* onCompositionStart={() => {
-  setTimeout(() => {
-    const newState = safelyExitAtomicBlock(editorState);
-    if (newState) {
-      setEditorState(newState);
-    }
-  }, 0);
-}} */
-  // handleBeforeInput={(chars: string, editorState: EditorState, _eventTimeStamp: number, { setEditorState }: { setEditorState: (editorState: EditorState) => void }) => {
-  //    if (!setEditorState) return
-  //   const newState = safelyExitAtomicBlock(editorState);
-  //   if (newState) {
-  //     setEditorState(newState);
-  //     return 'handled';
-  //   }
-  //   return 'not-handled';
-  // }}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      // handleBeforeInput={(...args) => handleBeforeInput(...args, { setEditorState })}
       />
       {isPopoverVisible && (
         <MentionPopover

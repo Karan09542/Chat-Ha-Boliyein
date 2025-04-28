@@ -70,8 +70,6 @@ class SocketService {
         await this.pubClient.publish("client-total", `${this._clients.size}`);
       }
 
-
-
       const getRoomSize = (roomId: string) => {
         const room = io.sockets.adapter.rooms.get(roomId);
         const roomSize = room ? room.size : 0;

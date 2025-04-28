@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { cn } from "../../../../utils/utils";
 import { handleDraftToHtml } from "../../../../utils/draft_utils";
 import { MessageData } from "../../../../utils/types";
@@ -10,6 +10,10 @@ import { BsThreeDots } from "react-icons/bs";
 import type { IconType } from "react-icons";
 import { FaCopy } from "react-icons/fa";
 import { handleCopy } from "../../../../utils/utils";
+
+import AutoSizer from "react-virtualized-auto-sizer"
+import { VariableSizeList as List } from "react-window"
+import MessageItem from "./MessageItem";
 
 interface ChatMessageBoxProps {
   messages: MessageData[] | [];
@@ -21,16 +25,17 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
   className,
 }) => {
 
-  const processedMessages = React.useMemo(() => {
-    if (!messages) return [];
-    return messages?.map((messageData) => {
-      return {
-        ...messageData,
-        message: handleDraftToHtml(messageData?.message || ""),
-        username: messageData?.username,
-      };
-    });
-  }, [messages]) as ChatMessageBoxProps["messages"];
+  // const processedMessages = React.useMemo(() => {
+  //   if (!messages) return [];
+  //   return messages?.map((messageData) => {
+  //     return {
+  //       ...messageData,
+  //       message: handleDraftToHtml(messageData?.message || ""),
+  //       username: messageData?.username,
+  //     };
+  //   });
+  // }, [messages]) as ChatMessageBoxProps["messages"];
+
 
   const messageUlRef = React.useRef<HTMLUListElement>(null);
 
@@ -55,47 +60,70 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
   }, []);
 
   const refs = useRef<(HTMLDivElement | null)[]>([]);
+  const listRef = useRef<any>(null);
+  const [heights, setHeights] = useState<number[]>([]);
 
-  type ThreeDotOption = {
-    svg: IconType;
-    onClick: (index: number) => void;
-    className?: string;
-  };
-  
-  const threeDotsOptions: ThreeDotOption[] = [
-    {
-      svg: FaCopy,
-      onClick: (index?: number) => handleCopy({ index, refs }),
-      className: "bg-red-500",
-    },
-  ];
+  // Measure and set heights once DOM is rendered
+  // const updateHeights = useCallback(() => {
+  //   const newHeights: number[] = processedMessages.map((_, i: number) => {
+  //     const el = refs.current[i];
+  //     return el?.getBoundingClientRect()?.height || 100;
+  //   })
+  //   setHeights(newHeights)
+  // }, [processedMessages])
 
-  interface ThreeDotsProps {
-    options: ThreeDotOption[];
-    index: number;
-  }
+  // useEffect(() => {
+  //   updateHeights()
+  // }, [processedMessages])
 
-  const ThreeDotsComponent: React.FC<ThreeDotsProps> = ({ options, index }) => {
+  // type ThreeDotOption = {
+  //   svg: IconType;
+  //   onClick: (index: number) => void;
+  //   className?: string;
+  // };
+
+  // const threeDotsOptions: ThreeDotOption[] = [
+  //   {
+  //     svg: FaCopy,
+  //     onClick: (index?: number) => handleCopy({ index, refs }),
+  //     className: "bg-red-500",
+  //   },
+  // ];
+
+  // interface ThreeDotsProps {
+  //   options: ThreeDotOption[];
+  //   index: number;
+  // }
+
+  // const ThreeDotsComponent: React.FC<ThreeDotsProps> = ({ options, index }) => {
+  //   return (
+  //     <div className="border rounded">
+  //       {options.map((option, i) => {
+  //         const { svg: Svg, onClick, className } = option;
+  //         return (
+  //           <div key={`dot-${i}`} className="p-1">
+  //             <Svg
+  //               key={`dot-option-${i}`}
+  //               onClick={() => {
+  //                 onClick(index)
+  //               }
+  //               } // use outer index
+  //               className={`text-white active:scale-95 transition-all cursor-pointer`}
+  //             />
+  //           </div>
+  //         );
+  //       })}
+  //     </div>
+  //   );
+  // };
+
+
+  const Row = ({ style, index }: { style: React.CSSProperties, index: number }) => {
+    if(!messages[index]) return null
     return (
-      <div className="border rounded">
-        {options.map((option, i) => {
-          const { svg: Svg, onClick, className } = option;
-          return (
-            <div key={`dot-${i}`} className="p-1">
-              <Svg
-                key={`dot-option-${i}`}
-                onClick={() => {
-		 onClick(index)
-		 }
-		} // use outer index
-                className={`text-white active:scale-95 transition-all cursor-pointer`}
-              />
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+      <MessageItem key={`message-${index}`} message={messages[index]} index={index} refs={refs} />
+    )
+  }
 
   return (
     <ul
@@ -105,71 +133,22 @@ const ChatMessageBox: React.FC<ChatMessageBoxProps> = ({
         className
       )}
     >
-      {processedMessages?.map((msg, i: number) => {
-        return (
-          <li
-            className={cn(
-              "flex gap-x-2 mb-1 [&_[data-user-icon]]:cursor-pointer [&_[data-user-icon]]:select-none",
-              msg?.isOwnMessage && "flex-row-reverse"
-            )}
-            key={`${msg?.username?.slice(0, 10)}-${i}`}
+      {/* <AutoSizer >
+        {({ height, width }) => {
+          return <List
+            style={{width}}
+            ref={listRef}
+            height={height}
+            itemCount={messages.length}
+            itemSize={(index) => heights[index] || 100}
+            width="100%"
           >
-            {msg?.isOwnMessage ? (
-              <img
-                data-user-icon
-                className="min-h-7 min-w-7 max-w-7 max-h-7 rounded-full"
-                src={
-                  localStorage?.getItem("image") ||
-                  "https://www.reshot.com/preview-assets/icons/X9ZFVKRH6Q/feeling-X9ZFVKRH6Q.svg"
-                }
-                alt=""
-              />
-            ) : msg?.username ? (
-              <Tippy content={msg?.username}>
-                <div
-                  data-user-icon
-                  className="min-h-7 min-w-7 max-w-7 max-h-7 rounded-full bg-gray-400 text-white place-content-center text-center truncate font-bold [&>span]:uppercase"
-                >
-                  <span>{msg?.username?.slice(0, 1)}</span>
-                </div>
-              </Tippy>
-            ) : (
-              <div data-user-icon className="min-h-7 min-w-7 max-w-7 max-h-7 aspect-square">
-                <Tippy content={"में भोला हुँ"}>
-                  <img
-                    src={
-                      "https://i.pinimg.com/736x/f9/ab/88/f9ab882db7c9fc6bb5f967f01a8c08c2.jpg"
-                    }
-                    alt="में भोला हुँ"
-                    className="h-full w-full rounded-full"
-                  />
-                </Tippy>
-              </div>
-            )}
-            <div className="relative">
-              <div
-                ref={(el) => {
-                  refs.current[i] = el;
-                }}
-                dangerouslySetInnerHTML={{ __html: msg?.message || "" }}
-                className="content max-w-md pt-4"
-              />
-              <Tippy
-                content={
-                  <ThreeDotsComponent options={threeDotsOptions} index={i} />
-                }
-                placement="right"
-                arrow={false}
-                trigger="click"
-                interactive={true}
-                className="[&>:first-child]:!p-0 [&>:first-child]:rounded-lg"
-              >
-                <BsThreeDots className="absolute top-0 right-2 text-white cursor-pointer" />
-              </Tippy>
-            </div>
-          </li>
-        );
-      })}
+            {({ index, style }) => <Row style={style} index={index} />}
+          </List>
+        }}
+      </AutoSizer> */}
+     
+      {messages?.map((message, i: number) =>(<MessageItem key={`message-${i}`} message={message}  index={i} refs={refs} />))}
     </ul>
   );
 };

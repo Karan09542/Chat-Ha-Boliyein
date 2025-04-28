@@ -1,54 +1,49 @@
-"use client"
+"use client";
 
 import React from "react";
 import { RxCross2 } from "react-icons/rx";
 
-function MediaComponent({
-  blockProps,
-  contentState,
-  block,
-}: {
-  blockProps: any;
-  contentState: any;
+type MediaProps = {
+  blockProps: {
+    mediaData?: {
+      src: string;
+      name?: string;
+      className?: string;
+      fileType?: string
+    };
+    onRemove: (blockKey: string) => void;
+  };
   block: any;
-}) {
+  contentState: any;
+};
 
-  const entityKey = block.getEntityAt(0)
-  if (!entityKey) return null;
-
-  const entity = contentState?.getEntity(block.getEntityAt(0));
-  const { src, name, className } = entity.getData();
+const MediaComponent = ({ blockProps, block, contentState }: MediaProps) => {
+  const { mediaData, onRemove } = blockProps || {};
   const blockKey = block.getKey();
+  const entityKey = block.getEntityAt(0)
+
+
+
+  if (!mediaData || !mediaData.src) return null;
+
+  const { src, name, className, fileType } = mediaData;
+  const mediaType = entityKey ? contentState.getEntity(entityKey).type || "" : ""
+
   const GetMediaTag = () => {
-    const mediaType = entity?.type;
+
+
     switch (mediaType) {
-      case "VIDEO": {
+      case "VIDEO":
         return (
           <video
             src={src}
-            title="Embedded Video"
             controls
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-            }}
+            className="absolute top-0 left-0 w-full h-full"
           />
         );
-      }
-      case "IMAGE": {
-        return (
-          <img
-            src={src}
-            alt={"image"}
-            // style={{ width: "100%", height: "100%" }}
-	    className={`${className}`}
-          />
-        );
-      }
-      case "IFRAME": {
+      case "IMAGE":
+        return <img src={src} alt="image" className={className || ""} />;
+      case "IFRAME":
         return (
           <iframe
             src={src}
@@ -56,53 +51,40 @@ function MediaComponent({
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            style={{
-              width: "100%",
-              height: "100%",
-            }}
+            className="w-full h-full"
           />
         );
-      }
-      case "AUDIO": {
+      case "AUDIO":
         return (
-          <audio src={src} title="Embedded Audio" controls>
-            <source
-              src={src}
-              style={{
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-              }}
-            />
+          <audio controls>
+            <source src={src} />
           </audio>
         );
-      }
-      case "FILE": {
+      case "FILE":
         return (
-          <a
-            href={src}
-            className="file"
-            style={{ width: "100%", height: "100%" }}
-            download
-          >
-            {name}
-          </a>
+          <div className="flex rounded dark:border-white/20 border-black/20 border px-3 py-1 dark:bg-white/20 bg-black/10 w-full h-full">
+            <svg xmlns="http://www.w3.org/2000/svg" className="inline-block w-6 h-7 mr-2" viewBox="0 0 30 20" fill="currentColor">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM13 3.5L18.5 9H14a1 1 0 01-1-1V3.5z" />
+            </svg>
+
+            <div>
+              <p>{name || "Download File"}</p>
+              <p>{fileType}</p>
+            </div>
+          </div>
         );
-      }
       default:
         return null;
     }
   };
+
   return (
     <div
-      className={`relative transition-all ${entity?.type?.toLowerCase()}-container min-[600px]:w-[334px]
-      `}
+      className={`relative transition-all ${mediaType || ""
+        }-container min-[600px]:w-[334px]`}
       style={
-        ["IFRAME", "VIDEO"].includes(entity?.type)
-          ? {
-              // width: "384px",
-              aspectRatio: "16/9",
-            }
+        ["IFRAME", "VIDEO"].includes(mediaType)
+          ? { aspectRatio: "16/9" }
           : { width: "fit-content" }
       }
     >
@@ -110,14 +92,25 @@ function MediaComponent({
       <RxCross2
         onMouseDown={(e) => {
           e.stopPropagation();
-          blockProps.onRemove(blockKey);
+          onRemove?.(blockKey);
         }}
-        cursor={"pointer"}
         size={24}
-        className="absolute -top-7 right-0  text-white bg-black rounded-full"
+        className="absolute -top-7 right-0 text-white bg-black rounded-full cursor-pointer"
       />
     </div>
   );
-}
+};
 
-export default React.memo(MediaComponent);
+// ✅ Only re-render if mediaData actually changes (shallow check)
+export default React.memo(MediaComponent, (prevProps, nextProps) => {
+  const prev = prevProps.blockProps?.mediaData;
+  const next = nextProps.blockProps?.mediaData;
+  return (
+    prev?.src === next?.src &&
+    prev?.name === next?.name &&
+    prev?.className === next?.className
+  );
+});
+
+
+

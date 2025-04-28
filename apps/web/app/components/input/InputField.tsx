@@ -13,6 +13,7 @@ interface InputFieldProps {
   placeholder: string;
   className?: string;
   register?: any
+  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void
 }
 const InputField: React.FC<InputFieldProps> = ({
   children,
@@ -22,14 +23,15 @@ const InputField: React.FC<InputFieldProps> = ({
   onChange,
   placeholder,
   className,
-  register
+  register,
+  onFocus
 }) => {
-  const [onFocus, setOnFocus] = React.useState(false);
+  const [onFocusing, setOnFocusing] = React.useState(false);
   return (
     <div
       className={cn(
         ` ${
-          onFocus ? "outline outline-blue-500" : ""
+          onFocusing ? "outline outline-blue-500" : ""
         }  w-full`,
         className
       )}
@@ -45,10 +47,13 @@ const InputField: React.FC<InputFieldProps> = ({
         onChange={onChange}
         placeholder={placeholder}
         className="outline-none"
-        onFocus={() => {
-          setOnFocus(true)
+        onFocus={(e) => {
+          setOnFocusing(true)
+          if(onFocus) {
+            onFocus(e)
+          }
         }}
-        onBlur={() => setOnFocus(false)}
+        onBlur={() => setOnFocusing(false)}
         {...register} 
       />
       {children}

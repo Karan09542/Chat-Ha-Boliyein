@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import ChatInput from "./utils/ChatInput";
-import { cn, isPermission, mainNotification } from "../../../utils/utils";
+import { cn, getNotificationMessage, isPermission, mainNotification } from "../../../utils/utils";
 import { MessageData } from "../../../utils/types";
-import { useTotalClientsStore, useWhoTypingStore } from "@store/index";
+import { useMessagesStore, useTotalClientsStore, useWhoTypingStore } from "@store/index";
 import { getSocket } from "../../../utils/socket";
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 const DynamicChatMessageBox = React.memo(
   dynamic(() => import("./utils/ChatMessageBox"), {
@@ -19,23 +19,20 @@ interface ChatBoxProps {
   className?: string;
 }
 
-const getNotificationMessage = (senderUsername:string): string => {
-  const messagesOption = [
-    `🔔 ${senderUsername} जी ने आपको भक्ति से भरा एक संदेश भेजा है। कृपया दर्शन करें।`,
-    `🌸 भक्त ${senderUsername} की भावना आपके चरणों में पहुँची है। एक संदेश आपका इंतज़ार कर रहा है।`,
-    `🔱 हर हर महादेव! ${senderUsername} जी ने अपनी श्रद्धा से आपको संदेश भेजा है।`,
-    `🕊️ ${senderUsername} जी ने ध्यान और प्रेम के साथ एक संदेश भेजा है। ह्रदय से स्वीकार करें।`,
-    `📿 राधे राधे! ${senderUsername} जी का एक भक्तिमय संदेश आपके लिए आया है।`,
-    `🙏 ${senderUsername} जी ने आपके साथ अपनी भक्ति बाँटी है, एक संदेश के रूप में।`,
-  ];
-  return messagesOption[Math.floor(Math.random() * messagesOption.length)] as string;
-}
+
 
 const socket = getSocket();
 const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<MessageData[]>([]);
-  const pathname = usePathname()
+  // const messages = useMessagesStore(state => state.messages);
+  // const setMessages = useMessagesStore(state => state.setMessages);
+
+  useEffect(() => {
+      if(typeof window === "undefined") return;
+      document.title = `Ha boliyein`
+    },[])
+  
 
   const setTotalClients = useTotalClientsStore(
     (state) => state.setTotalClients
@@ -81,9 +78,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
     socket.off("chat-message");
     socket.off("feedback")
 
-     /* if (socket && !socket.connected) {
-      socket.connect();
-    } */
+    //  if (socket && !socket.connected) {
+    //   socket.connect();
+    // }
+    socket.emit("get-total-clients");
 
     // total clients
     socket.on("client-total", handleClientTotal);
@@ -94,7 +92,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
 
     return () => {
       socket.off("client-total", handleClientTotal);
-      socket.on("feedback", handleFeedback);
+      socket.off("feedback", handleFeedback);
       socket.off("chat-message", handleChatMessage);
 
     };
