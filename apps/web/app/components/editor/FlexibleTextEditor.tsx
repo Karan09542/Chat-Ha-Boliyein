@@ -521,7 +521,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         case "FILE":
           return {
             component: MediaComponent,
-            editable: true,
+            editable: false,
             props: {
               onRemove: (blockKey: string) => {
                 const newEditorState = removeAtomicBlock(editorState, blockKey);
