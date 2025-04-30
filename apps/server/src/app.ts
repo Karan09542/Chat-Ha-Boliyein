@@ -12,12 +12,17 @@ import {
   fetchURLTitleController,
 } from "./controllers/appController";
 import mediaRoute from "./routes/mediaRoute";
+import { FRONTEND_URL } from "./config";
 
 
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: FRONTEND_URL || "http://localhost:3000",
+  })
+);
 
 app.use("/media", mediaRoute)
 // init socket
