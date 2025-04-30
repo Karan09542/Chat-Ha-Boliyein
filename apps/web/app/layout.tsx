@@ -33,6 +33,9 @@ export const metadata: Metadata = {
       },
     ],
     siteName: "Ha boliyein",
+  },
+  other: {
+    "google-site-verification": "AJdJaJ0HgIj0BR6SNd9ICGUthifyRC2fqJGcaI2n2LU"
   }
 };
 
