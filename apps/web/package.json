@@ -25,6 +25,7 @@
     "draft-js-export-html": "^1.4.1",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.21",
+    "mime-types": "^3.0.1",
     "next": "^15.1.6",
     "postcss": "^8.5.3",
     "qrcode-terminal": "^0.12.0",
