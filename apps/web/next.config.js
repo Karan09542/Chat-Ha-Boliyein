@@ -18,16 +18,16 @@ env: {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY, // 👈 expose to browser if needed
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
   },
-  experimental: {
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
-      },
-    },
-  }, // || disable label
+  // experimental: {
+  //   turbo: {
+  //     rules: {
+  //       "*.svg": {
+  //         loaders: ["@svgr/webpack"],
+  //         as: "*.js",
+  //       },
+  //     },
+  //   },
+  // }, // || disable label
 
   // in production disable, disable label
 };
