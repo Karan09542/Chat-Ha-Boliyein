@@ -86,6 +86,7 @@ const RoomChatBox: React.FC<RoomChatBoxProps> = ({ className }) => {
   };
 
   const handleRoomSize = async (roomSize: number) => {
+	console.log("room-size", roomSize)
     const rSize = +roomSize > 0 ? +roomSize - 1 : 0;
     setTotalClients(rSize);
   };
@@ -122,6 +123,7 @@ const RoomChatBox: React.FC<RoomChatBoxProps> = ({ className }) => {
     socket.off("join-room", handleRoomJoin);
     socket.off("user-offline-from-room", handleOfflineFromRoom)
     socket.off("room-feedback", handleRoomFeedback)
+    socket.off("room-left", handleRoomLeft);
 
     socket.off("get-room-size");
     socket.off("room-size", handleRoomSize);
@@ -154,7 +156,7 @@ const RoomChatBox: React.FC<RoomChatBoxProps> = ({ className }) => {
       socket.off("room-message", handleRoomMessage);
       socket.off("join-room", handleRoomJoin);
 
-      // socket.off("room-left", handleRoomLeft);
+      socket.off("room-left", handleRoomLeft);
       socket.off("user-offline-from-room", handleOfflineFromRoom);
       socket.off("get-room-size");
       socket.off("room-size", handleRoomSize);

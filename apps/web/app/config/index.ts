@@ -8,7 +8,6 @@ const getBackendUrl = (): string => {
     if (typeof window !== "undefined") {
       // We're on the client, use window's hostname
          return `http://${window.location.hostname}:1008`;
-      // return 'https://divisions-gossip-doubt-fat.trycloudflare.com'
     }
     return ""
   };

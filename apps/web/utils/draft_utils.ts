@@ -50,6 +50,7 @@ type Src = {
   src?: string
   name?: string
   fileType?:string
+  className?:string
 }
 export const insertMedia = (
   editorState: EditorState,
@@ -160,15 +161,38 @@ export const handleDraftToHtml = (postJson: string) => {
 
 ${className === "image" ? `<input type="radio" id="${entityKey}-om" name="image-show" class="hidden">` : ""}
 
-<input type="radio" id="${entityKey}" name="image-show" class="hidden">
+${ className === "image" ? `<input type="radio" id="${entityKey}" name="image-show" class="hidden">` : "" }
+
 
 <label for="${entityKey}" class="cursor-pointer">
 
-  <div class="${className} inline-block">
-  <img src="${src}" alt="tashweer" class="" />
-  
+  <div class="${className || "image"} inline-block">
   ${className === "image" ? `
-    <label for="${entityKey}-om" class="image-show-handler absolute top-2 right-2 bg-white rounded-full p-1 cursor-pointer">
+    <div class="image-size-container">
+    <label for="normal" class="hidden">
+    normal
+</label>
+<label for="sm" class="hidden">
+sm
+</label>
+<label for="md" class="hidden">
+md
+</label>
+<label for="lg" class="hidden">
+lg
+</label>
+</div>
+<input type="radio" name="image-size" id="normal" data-size="normal" 
+class="hidden" checked />
+<input type="radio" name="image-size" data-size="sm" id="sm" class="hidden" />
+<input type="radio" name="image-size" data-size="md" id="md" class="hidden" />
+<input type="radio" name="image-size" data-size="lg" id="lg" class="hidden" />
+` : "" }
+
+  <img src="${src}" alt="tashweer" class="" />
+
+  ${className === "image" ? `
+    <label for="${entityKey}-om" class="image-show-toggle absolute top-2 right-2 bg-white rounded-full p-1 cursor-pointer">
       <svg xmlns="http://www.w3.org/2000/svg" 
            viewBox="0 0 24 24" 
            fill="none" 
@@ -182,7 +206,9 @@ ${className === "image" ? `<input type="radio" id="${entityKey}-om" name="image-
       </svg>
     </label>
   ` : ""}
+ ${!/sticker|gif/.test(className) ? buttons(src, name) : ""}
 </div>
+
 
 </label>
 
@@ -191,7 +217,7 @@ ${className === "image" ? `<input type="radio" id="${entityKey}-om" name="image-
 	 ;
           }
           if (entity.getType() === "AUDIO") {
-            return `<audio controls class="relative">
+            return `<audio controls class="relative max-[600px]:w-68">
               <source src="${src}" />
 	      ${buttons(src, name)}
             </audio>`;

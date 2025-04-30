@@ -572,7 +572,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
           const imageSrc = reader.result; // Base64 image data
           if (imageSrc && typeof imageSrc === "string") {
             setEditorState((prevEditorState) => {
-              const { newEditorState } = insertImage(prevEditorState, imageSrc);
+              const { newEditorState } = insertMedia(prevEditorState, "IMAGE" ,{src:imageSrc, name: file.name, fileType: file.type, className: "image"});
               return newEditorState;
             });
           }
@@ -768,7 +768,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         handlePastedFiles={handlePastedFiles}
         onFocus={handleFocus}
         onBlur={handleBlur}
-      // handleBeforeInput={(...args) => handleBeforeInput(...args, { setEditorState })}
+        handleBeforeInput={(...args) => handleBeforeInput(...args, { setEditorState })}
       />
       {isPopoverVisible && (
         <MentionPopover

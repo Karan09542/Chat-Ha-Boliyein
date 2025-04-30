@@ -61,6 +61,7 @@
   --background: #ffffff;
   --foreground: #171717;
   --dark-blue: #0f172a;
+  --zoom-image: 1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -95,24 +96,49 @@ body {
 }
 
 input:checked + label .image {
- @apply fixed inset-0 w-fit h-fit m-auto bg-white/20 rounded-xl z-10 p-5;
+ @apply fixed inset-0 w-fit h-fit m-auto bg-black/50 rounded-xl z-10 p-5 ;
+}
+
+/* input[name='image-size'] */
+input[name='image-show']:checked + label  .image-size-container > label {
+ accent-color : red;
+ display: inline-block;
+ position: static !important;
+}
+
+input[data-size="sm"]:checked  ~ img {
+  --zoom-image: 0.5;
+}
+
+input[data-size="normal"]:checked ~ img {
+  --zoom-image: 1;
+}
+
+input[data-size="md"]:checked ~ img {
+  --zoom-image: 1.5;
+}
+
+input[data-size="lg"]:checked ~ img {
+  --zoom-image: 2;
 }
 
 
-input:checked + label .image > img {
- @apply  max-[600px]:w-[85%] min-[600px]:w-[70%] max-w-[500px] ;
-} 
-
-input:checked + label .image > label {
- @apply absolute top-0 right-0 size-fit;
+input:checked + label .image  img {
+ @apply  max-[600px]:w-[85%] min-[600px]:w-[70%] max-w-[500px];
+ zoom: var(--zoom-image);
+}
+ 
+/* size label */
+input:checked + label .image  label {
+ @apply absolute top-1 right-2 size-fit active:scale-85 cursor-pointer transition-all; 
 }
 
-:not(input:checked) .image-show-handler {
+:not(input:checked) .image-show-toggle {
  @apply hidden;
 }
 
-input:checked + label  .image-show-handler {
-@apply  max-[600px]:right-16 right-20 top-1.5 inline-block cursor-pointer bg-white p-1 rounded-full z-20;
+input:checked + label  .image-show-toggle {
+@apply max-[600px]:right-16 right-20 top-1.5 inline-block cursor-pointer bg-white p-1 rounded-full z-20;
 } 
 
 @layer components {

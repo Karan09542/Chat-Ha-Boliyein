@@ -56,7 +56,7 @@ const MediaComponent = ({ blockProps, block, contentState }: MediaProps) => {
         );
       case "AUDIO":
         return (
-          <audio controls>
+          <audio className="max-[600px]:w-68" controls>
             <source src={src} />
           </audio>
         );

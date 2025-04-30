@@ -16,6 +16,7 @@ const nextConfig = {
   // reactStrictMode: false,
 env: {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY, // 👈 expose to browser if needed
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
   },
   experimental: {
     turbo: {
