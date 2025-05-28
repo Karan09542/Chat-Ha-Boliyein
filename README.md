@@ -1,84 +1,76 @@
-# Turborepo starter
+# 🗨️ Ha-boliyein Chat App
 
-This Turborepo starter is maintained by the Turborepo core team.
+A real-time chat app with an inbuilt AI assistant that helps users stay informed, engaged, and curious — all without leaving the chat window.
 
-## Using this example
+---
 
-Run the following command:
+## 🧠 Inspiration
 
-```sh
-npx create-turbo@latest
-```
+What happens when we focus on simple ideas? They evolve into something big. You don’t always need to plan everything in detail — just be ready to **explore, learn, and build**. Small, thoughtful steps can lead to unexpected and meaningful outcomes.
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## 💬 What It Does
 
-### Apps and Packages
+- Real-time chat application with an **AI-powered assistant**.
+- Users can ask for:
+  - **Live updates**
+  - **Current news**
+  - **Images**, **YouTube videos**, and **audio clips**
+- The AI may also provide **helpful links (hrefs)** to explore more — all without leaving the chat interface.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+---
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## ⚙️ How We Built It
 
-### Utilities
+- Started with an existing chat app that lacked real-time AI capabilities.
+- Integrated **Sonar API** to power the AI bot.
+- The AI responds with:
+  - **Citations**
+  - **Media content** (like videos and images)
+  - Rich, informative messages that enhance the user experience
 
-This Turborepo has some additional tools already setup for you:
+---
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## 🧩 Challenges We Ran Into
 
-### Build
+- We use **Draft.js** to render rich media content.
+- The Sonar API responses (`data.choices[0].message.content`) often include Draft.js `rawContentState`.
+- Parsing these responses safely was challenging — we had to extract valid JSON to avoid errors during `JSON.parse`.
 
-To build all apps and packages, run the following command:
+---
 
-```
-cd my-turborepo
-pnpm build
-```
+## 🏆 Accomplishments We're Proud Of
 
-### Develop
+- Created a powerful chat experience where:
+  - Users can stay updated on **current affairs**, **local/global events**, and **economic data** (like GDP).
+  - Data can be **visualized** and understood in context — all within a chat.
+- Helped users **explore information** without needing to switch apps or tabs.
 
-To develop all apps and packages, run the following command:
+---
 
-```
-cd my-turborepo
-pnpm dev
-```
+## 📚 What We Learned
 
-### Remote Caching
+- **Focus and concentration** are key to finishing meaningful work quickly.
+- Acting without thinking can lead to **confusion and errors**.
+- Being mindful during development helps avoid complications and increases efficiency.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+---
 
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## 🚀 What's Next for Ha-boliyein Chat App
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+- Improve robustness and performance
+- Make the UI more **intuitive and beginner-friendly**
+- Add more smart features to enhance content understanding and interaction
 
-```
-cd my-turborepo
-npx turbo login
-```
+---
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## 🛠️ Tech Stack
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+- **React** (Frontend)
+- **Draft.js** (Rich text editor)
+- **Node.js** / **Express** (Backend)
+- **Sonar API** (AI Responses)
+- **WebSockets / Socket.io** (Real-time communication)
 
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+---
