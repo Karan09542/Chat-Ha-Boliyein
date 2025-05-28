@@ -1,5 +1,3 @@
-import clipboard from "clipboardy";
-
 const token = process.env.SONAR_API_KEY;
 
 const options = (input: string) => ({
@@ -21,7 +19,6 @@ const generateResponse = async (input: string) => {
  try {
    const res = await fetch("https://api.perplexity.ai/chat/completions", options(input));
    const data = await res.json();
-   clipboard.writeSync(JSON.stringify(data));
    return data.choices[0].message.content;
  } catch (error) {
    console.error("AI Error:", error);
