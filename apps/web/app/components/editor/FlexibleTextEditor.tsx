@@ -2,9 +2,6 @@
 
 import React from "react";
 import {
-  // AtomicBlockUtils,
-  // CharacterMetadata,
-  // CompositeDecorator,
   ContentBlock,
   DefaultDraftBlockRenderMap,
   Editor,
@@ -15,18 +12,16 @@ import {
   SelectionState,
   genKey,
   ContentState,
-  convertToRaw
 } from "draft-js";
 import "draft-js/dist/Draft.css";
 import immutable from "immutable";
 import {
-  insertImage,
   insertMedia,
   removeAtomicBlock,
 } from "../../../utils/draft_utils";
 import { decorateUsername } from "../../../utils/utils";
 import MediaComponent from "../comp_utils/draft/MediaComponent";
-import { List } from 'immutable';
+import { List } from "immutable";
 
 type MensionUser = { _id: string; name: string; avatar: string; role: string };
 interface FlexibleTextEditorProps {
@@ -61,9 +56,9 @@ interface FlexibleTextEditorProps {
   mensionMaxHeight?: number;
   setMensionInput?: (value: string) => void;
 
-  handleFocus?: (e: React.FocusEvent<HTMLDivElement>) => void
-  handleBlur?: (e: React.FocusEvent<HTMLDivElement>) => void
-  ref?: React.RefObject<Editor | null>
+  handleFocus?: (e: React.FocusEvent<HTMLDivElement>) => void;
+  handleBlur?: (e: React.FocusEvent<HTMLDivElement>) => void;
+  ref?: React.RefObject<Editor | null>;
 }
 const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
   placeholder,
@@ -87,7 +82,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
 
   handleFocus,
   handleBlur,
-  ref
+  ref,
 }) => {
   const toggleOL = () => {
     setEditorState(RichUtils.toggleBlockType(editorState, "ordered-list-item"));
@@ -321,6 +316,49 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       }
 
       case "backspace":
+      //    {
+      //   const content = editorState.getCurrentContent();
+      //   const selection = editorState.getSelection();
+
+      //   // Only act if selection is collapsed (cursor, not range)
+      //   if (!selection.isCollapsed()) return "not-handled";
+
+      //   const currentKey = selection.getStartKey();
+      //   const currentBlock = content.getBlockForKey(currentKey);
+
+      //   // Step 1: Check current block is unstyled and empty
+      //   const isEmptyUnstyled =
+      //     currentBlock.getType() === "unstyled" &&
+      //     currentBlock.getText().trim() === "";
+      //   if (!isEmptyUnstyled) return "not-handled";
+
+      //   // Step 2: Check if next block exists and is atomic
+      //   const nextBlock = content.getBlockAfter(currentKey);
+      //   if (!nextBlock || nextBlock.getType() !== "atomic")
+      //     return "not-handled";
+
+      //    console.log("राम राम राम")
+      //   // Step 3: Delete current block
+      //   const blockSelection = SelectionState.createEmpty(currentKey).merge({
+      //     anchorOffset: 0,
+      //     focusOffset: currentBlock.getLength(),
+      //     hasFocus: true,
+      //   });
+
+      //   const newContent = Modifier.removeRange(
+      //     content,
+      //     blockSelection,
+      //     "backward"
+      //   );
+      //   const newEditorState = EditorState.push(
+      //     editorState,
+      //     newContent,
+      //     "remove-range"
+      //   );
+      //   setEditorState(EditorState.forceSelection(newEditorState, newContent.getSelectionAfter()))
+
+      //   return "handled";
+      // }
       case "delete": {
         const selection = editorState.getSelection();
         const content = editorState.getCurrentContent();
@@ -335,7 +373,6 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
           return "handled";
         }
       }
-
 
       default:
         return "not-handled";
@@ -377,7 +414,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     // console.log("entityMap ", newEditorState.getCurrentContent()?.entityMap?.getLastCreatedEntityKey())
     setEditorState(newEditorState);
     const plainText = newEditorState.getCurrentContent().getPlainText();
-    setIsPostContent(/\S/.test(plainText))
+    setIsPostContent(/\S/.test(plainText));
 
     /* const cs = editorState.getCurrentContent()
     console.log("handleEcs ", convertToRaw(cs))
@@ -408,9 +445,8 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       try {
         const elementAtCursor = getElementAtCursor();
       } catch (error) {
-        console.warn("Failed to get element at cursor:", error)
+        console.warn("Failed to get element at cursor:", error);
       }
-
     } else setPopoverVisible(false);
   };
   const handleSelectSuggestion = (suggestion: MensionUser) => {
@@ -504,7 +540,6 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     );
   };
   const blockRendererFn = (block: ContentBlock) => {
-
     // console.log("block-type: ",block.getType())
     if (block.getType() === "atomic") {
       const cs = editorState.getCurrentContent();
@@ -513,12 +548,15 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       const entity = cs.getEntity(entityKey);
       const entityType = entity.getType();
 
+      console.log({ entityType, data: cs.getEntity(block.getEntityAt(0)).getData() });
+
       switch (entityType) {
         case "IMAGE":
         case "IFRAME":
         case "VIDEO":
         case "AUDIO":
         case "FILE":
+        case "GRAPH":
           return {
             component: MediaComponent,
             editable: false,
@@ -533,7 +571,6 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         default:
           return null;
       }
-
     }
 
     return null;
@@ -572,7 +609,12 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
           const imageSrc = reader.result; // Base64 image data
           if (imageSrc && typeof imageSrc === "string") {
             setEditorState((prevEditorState) => {
-              const { newEditorState } = insertMedia(prevEditorState, "IMAGE" ,{src:imageSrc, name: file.name, fileType: file.type, className: "image"});
+              const { newEditorState } = insertMedia(prevEditorState, "IMAGE", {
+                src: imageSrc,
+                name: file.name,
+                fileType: file.type,
+                className: "image",
+              });
               return newEditorState;
             });
           }
@@ -587,7 +629,7 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         reader.onload = () => {
           const videoSrc = reader.result;
           if (videoSrc && typeof videoSrc === "string") {
-            setEditorState(prevEditorState => {
+            setEditorState((prevEditorState) => {
               const { newEditorState } = insertMedia(
                 prevEditorState,
                 "VIDEO",
@@ -606,13 +648,13 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         reader.onload = () => {
           const audioSrc = reader.result;
           if (audioSrc && typeof audioSrc === "string") {
-            setEditorState(prevEditorState=>{
+            setEditorState((prevEditorState) => {
               const { newEditorState } = insertMedia(
                 prevEditorState,
                 "AUDIO",
                 audioSrc
               );
-              return newEditorState
+              return newEditorState;
             });
           }
         };
@@ -626,17 +668,17 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       reader.onload = () => {
         const fileSrc = reader.result;
         if (fileSrc && typeof fileSrc === "string") {
-          setEditorState(prevEditorState=>{
+          setEditorState((prevEditorState) => {
             const { newEditorState } = insertMedia(prevEditorState, "FILE", {
               src: fileSrc,
               name: file.name,
             });
-            return newEditorState
+            return newEditorState;
           });
         }
       };
       reader.readAsDataURL(file);
-      continue
+      continue;
     }
 
     return "handled";
@@ -673,23 +715,31 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
     return "not-handled"; // Let other pasted content proceed as normal
   };
 
-  function handleBeforeInput(chars: string, editorState: EditorState, _eventTimeStamp: number, { setEditorState }: { setEditorState: (editorState: EditorState) => void }) {
+  function handleBeforeInput(
+    chars: string,
+    editorState: EditorState,
+    _eventTimeStamp: number,
+    { setEditorState }: { setEditorState: (editorState: EditorState) => void }
+  ) {
     const selection = editorState.getSelection();
     const contentState = editorState.getCurrentContent();
     const blockKey = selection.getStartKey();
     const block = contentState.getBlockForKey(blockKey);
 
-    if (block.getType() === 'atomic') {
+    if (block.getType() === "atomic") {
       // नया empty block बनाओ manually (unstyled type)
       const newBlockKey = genKey();
       const blockMap = contentState.getBlockMap();
       const blocksBefore = blockMap.toSeq().takeUntil((v) => v === block);
-      const blocksAfter = blockMap.toSeq().skipUntil((v) => v === block).rest();
+      const blocksAfter = blockMap
+        .toSeq()
+        .skipUntil((v) => v === block)
+        .rest();
 
       const newBlock = new ContentBlock({
         key: newBlockKey,
-        type: 'unstyled',
-        text: '',
+        type: "unstyled",
+        text: "",
         characterList: List(),
       });
 
@@ -705,7 +755,10 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
           }); */
 
       const newBlockMap = blocksBefore
-        .concat([[blockKey, block], [newBlockKey, newBlock]]) // 👈 this is safer
+        .concat([
+          [blockKey, block],
+          [newBlockKey, newBlock],
+        ]) // 👈 this is safer
         .concat(blocksAfter)
         .toOrderedMap();
 
@@ -716,41 +769,22 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
       }) as ContentState;
 
       const newSelection = SelectionState.createEmpty(newBlockKey);
-      const newEditorState = EditorState.push(editorState, newContentState as ContentState, 'split-block');
-      const finalEditorState = EditorState.forceSelection(newEditorState, newSelection);
+      const newEditorState = EditorState.push(
+        editorState,
+        newContentState as ContentState,
+        "split-block"
+      );
+      const finalEditorState = EditorState.forceSelection(
+        newEditorState,
+        newSelection
+      );
 
       setEditorState(finalEditorState);
-      return 'handled';
+      return "handled";
     }
 
-    return 'not-handled';
+    return "not-handled";
   }
-
-  // React.useEffect(() => {
-  //   const contentDiv = document.querySelector(".public-DraftEditor-content");
-
-  //   const handleCompositionStart = () => {
-  //     console.log("Composition started");
-  //     setIsComposing(true);
-  //   };
-
-  //   const handleCompositionEnd = () => {
-  //     console.log("Composition ended");
-  //     setIsComposing(false);
-  //   };
-
-  //   if (contentDiv) {
-  //     contentDiv.addEventListener("compositionstart", handleCompositionStart);
-  //     contentDiv.addEventListener("compositionend", handleCompositionEnd);
-  //   }
-
-  //   return () => {
-  //     if (contentDiv) {
-  //       contentDiv.removeEventListener("compositionstart", handleCompositionStart);
-  //       contentDiv.removeEventListener("compositionend", handleCompositionEnd);
-  //     }
-  //   };
-  // }, [ref]);
 
   return (
     <>
@@ -768,7 +802,9 @@ const FlexibleTextEditor: React.FC<FlexibleTextEditorProps> = ({
         handlePastedFiles={handlePastedFiles}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        handleBeforeInput={(...args) => handleBeforeInput(...args, { setEditorState })}
+        handleBeforeInput={(...args) =>
+          handleBeforeInput(...args, { setEditorState })
+        }
       />
       {isPopoverVisible && (
         <MentionPopover

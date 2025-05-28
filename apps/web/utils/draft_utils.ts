@@ -11,6 +11,8 @@ import katex from "katex";
 import { stateToHTML } from "draft-js-export-html";
 
 import hljs from "highlight.js";
+import { Src } from "./types";
+import { Chart } from "chart.js";
 
 export const insertImage = (editorState: EditorState, url: string) => {
   // Get current content of the editor
@@ -18,9 +20,9 @@ export const insertImage = (editorState: EditorState, url: string) => {
 
   // Create an IMAGE entity with the provided URL
   const contentStateWithEntity = contentState.createEntity(
-    'IMAGE',
-    'IMMUTABLE', // The image is immutable (cannot be edited once inserted)
-    { src: url }  // Additional data (URL of the image)
+    "IMAGE",
+    "IMMUTABLE", // The image is immutable (cannot be edited once inserted)
+    { src: url } // Additional data (URL of the image)
   );
 
   // Get the entity key for the newly created entity
@@ -30,14 +32,14 @@ export const insertImage = (editorState: EditorState, url: string) => {
   const newEditorState = EditorState.push(
     editorState,
     contentStateWithEntity,
-    'insert-characters' // This tells Draft.js it's a modification involving character insertions
+    "insert-characters" // This tells Draft.js it's a modification involving character insertions
   );
 
   // Insert the atomic block (image block) at the cursor position
   const editorStateWithAtomicBlock = AtomicBlockUtils.insertAtomicBlock(
     newEditorState,
     entityKey,
-    ' ' // Empty space placeholder to represent the atomic block
+    " " // Empty space placeholder to represent the atomic block
   );
 
   return {
@@ -45,18 +47,11 @@ export const insertImage = (editorState: EditorState, url: string) => {
     entityKey,
   };
 };
-
-type Src = {
-  src?: string
-  name?: string
-  fileType?:string
-  className?:string
-}
 export const insertMedia = (
   editorState: EditorState,
   mediaType: string,
   src: string | Src
-) => {
+): { newEditorState: EditorState; entityKey: string } => {
   const contentState = editorState.getCurrentContent();
   const contentStateWithEntity = contentState.createEntity(
     mediaType,
@@ -99,10 +94,8 @@ export const removeAtomicBlock = (
 // absolute right-0 bg-blue-500 rounded p-1
 // relative left-[98%] top-7 bg-white rounded p-1 hidden group-hover:inline-block
 
-
-const buttons =(src:string, name="image") => {
-
- return (`
+const buttons = (src: string, name = "image") => {
+  return `
 <div class="i-container">
 	<span class="i-dropdown">
       <button class="i-menu-button">⋮</button>
@@ -114,14 +107,8 @@ const buttons =(src:string, name="image") => {
 
 </span> 
 </div>
-`)
-
-}
-
-
-
-
-
+`;
+};
 
 export const handleDraftToHtml = (postJson: string) => {
   let options = {
@@ -161,13 +148,15 @@ export const handleDraftToHtml = (postJson: string) => {
 
 ${className === "image" ? `<input type="radio" id="${entityKey}-om" name="image-show" class="hidden">` : ""}
 
-${ className === "image" ? `<input type="radio" id="${entityKey}" name="image-show" class="hidden">` : "" }
+${className === "image" ? `<input type="radio" id="${entityKey}" name="image-show" class="hidden">` : ""}
 
 
 <label for="${entityKey}" class="cursor-pointer">
 
   <div class="${className || "image"} inline-block">
-  ${className === "image" ? `
+  ${
+    className === "image"
+      ? `
     <div class="image-size-container">
     <label for="normal" class="hidden">
     normal
@@ -187,11 +176,15 @@ class="hidden" checked />
 <input type="radio" name="image-size" data-size="sm" id="sm" class="hidden" />
 <input type="radio" name="image-size" data-size="md" id="md" class="hidden" />
 <input type="radio" name="image-size" data-size="lg" id="lg" class="hidden" />
-` : "" }
+`
+      : ""
+  }
 
   <img src="${src}" alt="tashweer" class="" />
 
-  ${className === "image" ? `
+  ${
+    className === "image"
+      ? `
     <label for="${entityKey}-om" class="image-show-toggle absolute top-2 right-2 bg-white rounded-full p-1 cursor-pointer">
       <svg xmlns="http://www.w3.org/2000/svg" 
            viewBox="0 0 24 24" 
@@ -205,7 +198,9 @@ class="hidden" checked />
         <line x1="6" y1="6" x2="18" y2="18" />
       </svg>
     </label>
-  ` : ""}
+  `
+      : ""
+  }
  ${!/sticker|gif/.test(className) ? buttons(src, name) : ""}
 </div>
 
@@ -213,8 +208,7 @@ class="hidden" checked />
 </label>
 
 
-		</div>`
-	 ;
+		</div>`;
           }
           if (entity.getType() === "AUDIO") {
             return `<audio controls class="relative max-[600px]:w-68">
@@ -251,6 +245,28 @@ class="hidden" checked />
               </div>
             </div>`;
           }
+
+          if (entity.getType() === "GRAPH") {
+            const { graph } = entity?.getData();
+            const chartId = `chart-${Math.random().toString(36).substring(2, 9)}`;
+
+            // Save the graph config to use later in useEffect
+            setTimeout(() => {
+              const ctx = document.getElementById(chartId) as HTMLCanvasElement;
+              if (ctx && graph) {
+                new Chart(ctx, {
+                  type: graph.type.toLowerCase(), // Chart.js accepts lowercase
+                  data: graph.data,
+                });
+              }
+            }, 0);
+
+            return `
+    <div class="chart-container" style="width:100%; height:300px;">
+      <canvas id="${chartId}"></canvas>
+    </div>
+  `;
+          }
         }
 
         return ""; // Return empty for other atomic blocks
@@ -281,9 +297,9 @@ class="hidden" checked />
       // return `<div class="code">${match}</div>`;
       let codeContent = "";
       const doc = domParser.parseFromString(match, "text/html");
-      doc.querySelectorAll("pre code")?.forEach(ele => {
-        codeContent += `<pre><code>${hljs.highlightAuto(ele?.textContent || "").value}</code></pre>` ;
-      })
+      doc.querySelectorAll("pre code")?.forEach((ele) => {
+        codeContent += `<pre><code>${hljs.highlightAuto(ele?.textContent || "").value}</code></pre>`;
+      });
 
       return `<div class="code">${codeContent}</div>`;
     }
@@ -302,7 +318,6 @@ class="hidden" checked />
       })}</span>`;
     }
   );
-  
 
   // console.log("htmlDocs", htmlDocs);
 
@@ -316,7 +331,7 @@ class="hidden" checked />
       "src",
       "width",
       "height",
-"href",
+      "href",
     ],
     ADD_TAGS: ["iframe"],
     FORBID_TAGS: ["script"],

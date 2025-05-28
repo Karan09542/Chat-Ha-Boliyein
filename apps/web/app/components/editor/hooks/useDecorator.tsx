@@ -72,7 +72,7 @@ function useDecorator({
     const { url, rel, target, className } = props.contentState
       .getEntity(props.entityKey)
       .getData();
-    // console.log("props", props.contentState.getEntity(props.entityKey));
+    console.log("props", props.contentState.getEntity(props.entityKey));
     return (
       <a
         onClick={(e: any) => {

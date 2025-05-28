@@ -3,11 +3,19 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import ChatInput from "./utils/ChatInput";
-import { cn, getNotificationMessage, isPermission, mainNotification } from "../../../utils/utils";
+import {
+  cn,
+  getNotificationMessage,
+  isPermission,
+  mainNotification,
+} from "../../../utils/utils";
 import { MessageData } from "../../../utils/types";
-import { useMessagesStore, useTotalClientsStore, useWhoTypingStore } from "@store/index";
+import {
+  useTotalClientsStore,
+  useWhoTypingStore,
+} from "@store/index";
 import { getSocket } from "../../../utils/socket";
-import { useSearchParams } from "next/navigation";
+import "../chart/ChartSetup"
 
 const DynamicChatMessageBox = React.memo(
   dynamic(() => import("./utils/ChatMessageBox"), {
@@ -19,20 +27,15 @@ interface ChatBoxProps {
   className?: string;
 }
 
-
-
 const socket = getSocket();
 const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<MessageData[]>([]);
-  // const messages = useMessagesStore(state => state.messages);
-  // const setMessages = useMessagesStore(state => state.setMessages);
 
   useEffect(() => {
-      if(typeof window === "undefined") return;
-      document.title = `Ha boliyein`
-    },[])
-  
+    if (typeof window === "undefined") return;
+    document.title = `Ha boliyein`;
+  }, []);
 
   const setTotalClients = useTotalClientsStore(
     (state) => state.setTotalClients
@@ -45,12 +48,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
     setTotalClients(total);
   };
   const handleFeedback = async (username: string) => {
-    setWhoTyping({path:"/", username});
+    setWhoTyping({ path: "/", username });
   };
   const handleChatMessage = async (message: string) => {
     const parsedMessage = JSON.parse(message);
-    if(document.visibilityState === "hidden"){
-      const username = parsedMessage?.username || "भक्त"
+    if (document.visibilityState === "hidden") {
+      const username = parsedMessage?.username || "भक्त";
       await mainNotification(getNotificationMessage(username));
     }
 
@@ -65,22 +68,19 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
         : [...prev, { ...parsedMessage, isOwnMessage: false }];
     });
   };
-  useEffect(()=>{
-    async function getNotificationPermission(){
-      await isPermission()
+  useEffect(() => {
+    async function getNotificationPermission() {
+      await isPermission();
     }
-    getNotificationPermission()
-   },[])
+    getNotificationPermission();
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
     socket.off("client-total");
     socket.off("chat-message");
-    socket.off("feedback")
+    socket.off("feedback");
 
-    //  if (socket && !socket.connected) {
-    //   socket.connect();
-    // }
     socket.emit("get-total-clients");
 
     // total clients
@@ -94,7 +94,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
       socket.off("client-total", handleClientTotal);
       socket.off("feedback", handleFeedback);
       socket.off("chat-message", handleChatMessage);
-
     };
   }, []);
 
@@ -110,8 +109,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ className }) => {
       setMessage("");
     }
   };
-
-  
 
   return (
     <div

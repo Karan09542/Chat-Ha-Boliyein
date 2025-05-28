@@ -27,25 +27,23 @@ import outSideClose from "../../../hooks/outSideClose";
 
 import { BsUpload } from "react-icons/bs";
 import { FaCamera } from "react-icons/fa";
+import { FcSearch } from "react-icons/fc";
 import { useFieldArray, useForm } from "react-hook-form";
 import ErrorMessage from "../comp_utils/message/ErrorMessage";
 import { AtomicBlockUtils, EditorState, Modifier, RichUtils } from "draft-js";
 import { IoMdAdd } from "react-icons/io";
 
-import { cn } from "../../../utils/utils";
-import Tippy from "@tippyjs/react";
-import { Media } from "../../../utils/types";
 import EmojiContainer from "../comp_utils/emoji/EmojiContainer";
 import { BACKEND_URL } from "../../config";
 import { CgAttachment } from "react-icons/cg";
 
-// import { useIpv4Store} from "@store/index";
 // media svgs
 import { PiVideoFill } from "react-icons/pi";
 import { MdOutlineAudiotrack } from "react-icons/md";
 import { IoDocumentText } from "react-icons/io5";
 import { insertMedia } from "../../../utils/draft_utils";
 import useResize from "../../../hooks/useResize";
+import OnlineImage from "../comp_utils/o-img/OnlineImage";
 
 interface TextEditorButtonsProps {
   editorState: EditorState;
@@ -92,7 +90,7 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     setState: setIsEmoji,
     ref: emojiContainerRef,
     arg: false,
-  })
+  });
 
   const richButtonContainerRef = useRef<HTMLDivElement>(null);
   const isDown = useRef(false);
@@ -237,24 +235,6 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     return block?.getType(); // Returns the type of the current block
   };
 
-
-  /* const hasInlineStyleOf = (editorState: EditorState, style: string) => {
-     const currentStyle = editorState?.getCurrentInlineStyle?.();
-     return currentStyle?.has(style);
-   }; */
-
-  /* const hasInlineStyleOf = (style: string) => {
-    try {
-      const selection = editorState.getSelection();
-      if (!selection || selection.isCollapsed()) return false;
-  
-      return editorState.getCurrentInlineStyle().has(style);
-    } catch (err) {
-      console.error("Error checking inline style:", err);
-      return false;
-    }
-  }; */
-
   const hasInlineStyleOf = (editorState: EditorState, style: string) => {
     try {
       const selection = editorState.getSelection();
@@ -282,8 +262,6 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
       return false;
     }
   };
-
-
 
   // Example usage to determine the block type
   const isH1 = () => getCurrentBlockType() === "header-one";
@@ -522,15 +500,17 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         return (
           <span
             key={button.title}
-            className={`p-[0.2rem] w-fit rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${button?.checker?.(editorState) &&
+            className={`p-[0.2rem] w-fit rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${
+              button?.checker?.(editorState) &&
               !["Nested Item", "UnNested Item"].includes(button.title)
-              ? "border"
-              : "border-transparent border"
-              } ${["Nested Item", "UnNested Item"].includes(button.title) &&
-                !(isOL() || isUL())
+                ? "border"
+                : "border-transparent border"
+            } ${
+              ["Nested Item", "UnNested Item"].includes(button.title) &&
+              !(isOL() || isUL())
                 ? "hidden"
                 : ""
-              } 
+            } 
                 ${button.title === "Backward" && !isUndo ? "opacity-30" : ""} 
                 ${button.title === "Forward" && !isRedo ? "opacity-30" : ""} 
                 `}
@@ -548,11 +528,12 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
             }}
           >
             <ButtonSvg
-              className={`${button?.checker?.(editorState) &&
+              className={`${
+                button?.checker?.(editorState) &&
                 !["Nested Item", "UnNested Item"].includes(button.title)
-                ? "[&>path]:fill-[#2563eb]"
-                : ""
-                }`}
+                  ? "[&>path]:fill-[#2563eb]"
+                  : ""
+              }`}
             />
           </span>
         );
@@ -560,14 +541,16 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         return (
           <button
             key={button.title}
-            className={`p-[0.2rem] rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${button?.checker?.(editorState)
-              ? "border"
-              : "border-transparent border"
-              } ${button?.checker?.(editorState) &&
-                !["Nested Item", "UnNested Item"].includes(button.title)
+            className={`p-[0.2rem] rounded cursor-pointer hover:border hover:border-[#2563eb] ${className} ${
+              button?.checker?.(editorState)
+                ? "border"
+                : "border-transparent border"
+            } ${
+              button?.checker?.(editorState) &&
+              !["Nested Item", "UnNested Item"].includes(button.title)
                 ? "[&>path]:fill-[#2563eb]"
                 : ""
-              }`}
+            }`}
             onMouseDown={(e) => {
               e.preventDefault();
               button?.handler?.(editorState, setEditorState);
@@ -644,7 +627,11 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     setIsImageInput(false);
     setIsImageUrlInput(false);
   }
-  const insertImage = (editorState: EditorState, url: string, className: string = "image") => {
+  const insertImage = (
+    editorState: EditorState,
+    url: string,
+    className: string = "image"
+  ) => {
     const contentState = editorState.getCurrentContent();
     const contentStateWithEntity = contentState.createEntity(
       "IMAGE",
@@ -756,49 +743,53 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
       "insert-characters"
     );
     setEditorState(newEditorState);
-  }
-
-
+  };
 
   // Main File (React)
   const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileArray = [...(e.target.files || [])];
     if (fileArray.length === 0) return;
-    // alert(`e.target.files: ${JSON.stringify(e?.target?.files)}`);
-
-    // const result: { name: string, base64: string }[] = [];
 
     fileArray.forEach((file) => {
-      const worker = new Worker('worker.js');
-      
+      const worker = new Worker("worker.js");
+
       worker.postMessage({ file });
-      
+
       worker.onmessage = (event) => {
         if (event.data.base64) {
-
           // result.push({ name: file.name, base64: event.data.base64 });
           if (file.type.includes("video")) {
-            setEditorState(prevEditorState => {
-              const { newEditorState } = insertMedia(prevEditorState, "VIDEO", event.data.base64);
+            setEditorState((prevEditorState) => {
+              const { newEditorState } = insertMedia(
+                prevEditorState,
+                "VIDEO",
+                event.data.base64
+              );
               return newEditorState;
-            })
-          }
-          else if (file.type.includes("audio")) {
-            setEditorState(prevEditorState => {
-              const { newEditorState } = insertMedia(prevEditorState, "AUDIO", event.data.base64);
+            });
+          } else if (file.type.includes("audio")) {
+            setEditorState((prevEditorState) => {
+              const { newEditorState } = insertMedia(
+                prevEditorState,
+                "AUDIO",
+                event.data.base64
+              );
               return newEditorState;
-            })
-          }
-          else if (file) {
-            setEditorState(prevEditorState => {
-              const { newEditorState } = insertMedia(prevEditorState, "FILE", { src: event.data.base64, name: file.name, fileType: file.type });
+            });
+          } else if (file) {
+            setEditorState((prevEditorState) => {
+              const { newEditorState } = insertMedia(prevEditorState, "FILE", {
+                src: event.data.base64,
+                name: file.name,
+                fileType: file.type,
+              });
               return newEditorState;
-            })
+            });
           }
 
-          worker.terminate()
+          worker.terminate();
         } else {
-          console.error('Error in processing file');
+          console.error("Error in processing file");
         }
       };
     });
@@ -807,38 +798,69 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
     {
       type: "video",
       svg: <PiVideoFill color={"#FF0B55"} />,
-      input: <input onChange={handleMediaChange} id="video" type="file" accept="video/*" hidden multiple />
+      input: (
+        <input
+          onChange={handleMediaChange}
+          id="video"
+          type="file"
+          accept="video/*"
+          hidden
+          multiple
+        />
+      ),
     },
     {
       type: "audio",
       svg: <MdOutlineAudiotrack color={"#273F4F"} />,
-      input: <input onChange={handleMediaChange} id="audio" type="file" accept="audio/*" hidden multiple />
+      input: (
+        <input
+          onChange={handleMediaChange}
+          id="audio"
+          type="file"
+          accept="audio/*"
+          hidden
+          multiple
+        />
+      ),
     },
 
     {
       type: "document",
       svg: <IoDocumentText color={"#40A2E3"} />,
-      input: <input onChange={handleMediaChange} id="document" type="file" accept="application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain" hidden multiple />
-    }
-  ]
+      input: (
+        <input
+          onChange={handleMediaChange}
+          id="document"
+          type="file"
+          accept="application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain"
+          hidden
+          multiple
+        />
+      ),
+    },
+  ];
 
-  const size = useResize()
+  const size = useResize();
   const mediaAttachmentRef = useRef<HTMLDivElement>(null);
-  const [mediaPopupPosition, setMediaPopupPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  const [mediaPopupPosition, setMediaPopupPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
   useEffect(() => {
     if (mediaAttachmentRef.current) {
       const { x, y } = mediaAttachmentRef.current.getBoundingClientRect();
-      setMediaPopupPosition({ x, y })
+      setMediaPopupPosition({ x, y });
     }
-  }, [size])
+  }, [size]);
   const MediaPopup: React.FC = () => {
     return (
       <div
         className="flex gap-2 dark:bg-whit bg-blac border-[#627254] border bg-[#EEF7FF] w-fit p-1 rounded-lg
-">
-        {
-          mediaInputList.map(({ type, svg, input }) => {
-            return <div key={type}>
+"
+      >
+        {mediaInputList.map(({ type, svg, input }) => {
+          return (
+            <div key={type}>
               <div className="max-[600px]:p-1 p-0.5 rounded [&_svg]:cursor-pointer [&_svg]:size-6.5 btn-effect">
                 <label htmlFor={type}>
                   {svg}
@@ -846,22 +868,39 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
                 </label>
               </div>
             </div>
-          })
-        }
+          );
+        })}
       </div>
-    )
-  }
+    );
+  };
 
-
-  const [isMedia, setIsMedia] = useState<boolean>(false)
+  const [isMedia, setIsMedia] = useState<boolean>(false);
+  const [isOnlineImageOpen, setIsOnlineImageOpen] = useState<boolean>(false);
 
   return (
     <div>
+      {isOnlineImageOpen && (
+        <OnlineImage
+          setIsOnlineImageOpen={setIsOnlineImageOpen}
+          editorState={editorState}
+          setEditorState={setEditorState}
+          insertMedia={insertMedia}
+        />
+      )}
       {/* absolute bottom-0 w-full px-2 py-3 bg-gray-100  */}
-      {isEmoji && <EmojiContainer setIsEmoji={setIsEmoji} editorState={editorState} setEditorState={setEditorState} handleInsertCharacter={handleInsertCharacter} insertImage={insertImage} />}
+      {isEmoji && (
+        <EmojiContainer
+          setIsEmoji={setIsEmoji}
+          editorState={editorState}
+          setEditorState={setEditorState}
+          handleInsertCharacter={handleInsertCharacter}
+          insertImage={insertImage}
+        />
+      )}
       <div
-        className={`flex ${isLinkInput ? "items-center" : ""} gap-x-5 ${isPostButton ? "p-2 h-16" : "px-2 h-10"
-          } ${className} `}
+        className={`flex ${isLinkInput ? "items-center" : ""} gap-x-5 ${
+          isPostButton ? "p-2 h-16" : "px-2 h-10"
+        } ${className} `}
       >
         {isLinkInput && (
           <div
@@ -905,10 +944,11 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
               <span
                 aria-label="cancel"
                 role="button"
-                className={`${url
-                  ? "border-blue-500 text-blue-500 hover:bg-blue-200/40 "
-                  : "text-gray-500 hover:bg-gray-200/40"
-                  } border  px-3.5 py-1 rounded-full  font-semibold  active:opacity-80 cursor-pointer select-none `}
+                className={`${
+                  url
+                    ? "border-blue-500 text-blue-500 hover:bg-blue-200/40 "
+                    : "text-gray-500 hover:bg-gray-200/40"
+                } border  px-3.5 py-1 rounded-full  font-semibold  active:opacity-80 cursor-pointer select-none `}
                 onClick={() => {
                   setIsLinkInput(false);
                   if (url) {
@@ -948,7 +988,7 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
               <div
                 className="relative"
                 onClick={() => {
-                  setIsMedia(false)
+                  setIsMedia(false);
                   setIsImageInput((prev) => !prev);
                 }}
               >
@@ -963,13 +1003,15 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
                 😊
               </div>
 
-              <div ref={mediaAttachmentRef} onClick={() => {
-                setIsImageInput(false)
-                setIsMedia(prev => !prev)
-                }}>
+              <div
+                ref={mediaAttachmentRef}
+                onClick={() => {
+                  setIsImageInput(false);
+                  setIsMedia((prev) => !prev);
+                }}
+              >
                 <CgAttachment size={21} color={"#2563eb"} className="p-0.5" />
               </div>
-
             </div>
             <div className="absolute top-full flex items-center w-full h-full gap-2 cursor-pointer">
               {/* unFormatting button */}
@@ -1005,8 +1047,9 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
         )}
         {isImageInput && (
           <div
-            className={`absolute z-10  px-2 py-1 dark:bg-white bg-black text-white dark:text-black border border-[#e0e0e0] rounded ${isImageUrlInput ? "bottom-1  right-1 " : "-top-5 left-18"
-              }  `}
+            className={`absolute z-10  px-2 py-1 dark:bg-white bg-black text-white dark:text-black border border-[#e0e0e0] rounded ${
+              isImageUrlInput ? "bottom-1  right-1 " : "-top-5 left-18"
+            }  `}
           >
             {!isImageUrlInput && (
               <div className="flex items-center gap-2 ">
@@ -1080,11 +1123,11 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
                             `images.${index}`,
                             index === 0
                               ? {
-                                required: {
-                                  value: true,
-                                  message: "At least one image is required",
-                                },
-                              }
+                                  required: {
+                                    value: true,
+                                    message: "At least one image is required",
+                                  },
+                                }
                               : {}
                           )}
                         />
@@ -1125,9 +1168,19 @@ const TextEditorButtons: React.FC<TextEditorButtonsProps> = ({
             )}
           </div>
         )}
-        {isMedia && <div style={{ left: mediaPopupPosition.x + 10}} className="absolute z-10 -top-5.5">
-          <MediaPopup />
-          </div>}
+        {isMedia && (
+          <div
+            style={{ left: mediaPopupPosition.x + 10 }}
+            className="absolute z-10 -top-5.5"
+          >
+            <MediaPopup />
+          </div>
+        )}
+        <div onClick={() => {
+          setIsOnlineImageOpen(prev => !prev)
+        }} className="flex gap-x-1 p-2 items-center h-fit text-sm laila-regular text-center active:scale-90 transition ease-out leading-5 border border-blue-500 rounded select-none">
+          <FcSearch size={18} /> images
+        </div>
       </div>
     </div>
   );

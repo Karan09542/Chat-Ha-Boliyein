@@ -23,3 +23,17 @@ export interface ThreeDotsProps {
   options: ThreeDotOption[];
   index: number;
 }
+
+export type Src = {
+  src?: string
+  name?: string
+  fileType?:string
+  className?:string
+}
+
+export type OnlineMediaData = {
+  id: string;
+  url: string;
+  displayUrl: string;
+  alt: string;
+};

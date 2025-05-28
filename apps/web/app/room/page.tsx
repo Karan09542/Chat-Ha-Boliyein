@@ -1,7 +1,7 @@
 import React from "react";
 import RoomChat from "./components/RoomChat"
 const room: React.FC = () => {
-	return <div>
+	return <div className="">
 		<RoomChat />
 	</div>;
 };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { generateResponse } from "../../../service/model/gemini"
+import { generateResponse } from "../../../service/model/sonar"
 
 export async function POST(request: Request) {
 	let data = await request.json()

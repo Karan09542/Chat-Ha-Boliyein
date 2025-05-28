@@ -1,7 +1,6 @@
 import React from 'react'
 import { ToastContainer } from 'react-toastify'
 import ChatBox from './ChatBox'
-
 const Chat = () => {
   return (
     <>

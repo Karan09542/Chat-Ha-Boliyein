@@ -15,8 +15,10 @@ const nextConfig = {
   },
   // reactStrictMode: false,
 env: {
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY, // 👈 expose to browser if needed
+    SONAR_API_KEY: process.env.SONAR_API_KEY, // 👈 expose to browser if needed
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+    PEXEL_API_KEY: process.env.PEXELS_API_KEY,
+
   },
   experimental: {
     turbo: {

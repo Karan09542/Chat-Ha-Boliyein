@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 import { Socket } from "socket.io-client";
 import { create } from "zustand";
-import { Media, MessageData } from "../utils/types";
+import { Media, MessageData, OnlineMediaData } from "../utils/types";
 
 interface ISocketState {
   sendMessage?: (message: string) => any;
@@ -16,7 +16,7 @@ interface ITotalClientsState {
   setTotalClients: (totalClients: number | string) => void;
 }
 
-type WhoTyping = {path: string, username: string};
+type WhoTyping = { path: string; username: string };
 interface IWhoTypingStoreState {
   whoTyping?: WhoTyping;
   setWhoTyping: (whoTyping: WhoTyping) => void;
@@ -33,10 +33,10 @@ interface IIPv4StoreState {
 }
 
 type SearchEmoji = {
-  emoji:string;
-  sticker:string;
-  gif:string;
-}
+  emoji: string;
+  sticker: string;
+  gif: string;
+};
 
 interface EmojiStore {
   searchEmoji: SearchEmoji;
@@ -54,6 +54,21 @@ interface EmojiStore {
   cache: Record<string, Media[]>;
   setCache: (query: string, data: Media[]) => void;
 }
+
+interface OnlineImageState {
+  searchQuery: {image: string, video: string};
+  setSearchQuery: (data: Partial<{image: string, video: string}>) => void;
+  onlineImages: OnlineMediaData[];
+  setOnlineImages: (data: OnlineMediaData[]) => void;
+  onlineVideos: OnlineMediaData[];
+  setOnlineVideos: (data: OnlineMediaData[]) => void;
+
+  activeTab: "image" | "video";
+  setActiveTab: (activeTab: "image" | "video") => void;
+
+  cache: Record<string, OnlineMediaData[]>;
+  setCache: (query: string, data: OnlineMediaData[]) => void;
+}
 interface JoinReqeustToRoom {
   isSendJoinRequest: boolean;
   setIsSendJoinRequest: (value: boolean) => void;
@@ -61,7 +76,7 @@ interface JoinReqeustToRoom {
 
 interface MessagesState {
   messages: MessageData[];
-  setMessages: (messages:MessageData[]) => void;
+  setMessages: (messages: MessageData[]) => void;
 }
 
 export const useSocketStore = create<ISocketState>((set, get) => ({
@@ -105,40 +120,61 @@ export const useWhoTypingStore = create<IWhoTypingStoreState>((set) => ({
 }));
 
 export const useBaseURLStore = create<IBaseURLStoreState>((set) => ({
-  baseURL:"",
+  baseURL: "",
   setBaseURL: (baseURL) => set({ baseURL }),
 }));
 
-export const useIpv4Store = create<IIPv4StoreState>((set)=>({
+export const useIpv4Store = create<IIPv4StoreState>((set) => ({
   ipv4: "",
-  setIpv4: (ipv4) => set({ipv4})
-}))
+  setIpv4: (ipv4) => set({ ipv4 }),
+}));
 
 export const useEmojiStore = create<EmojiStore>((set, get) => ({
-  searchEmoji: {emoji:"", sticker:"", gif:""},
-  setSearchEmoji: (newSearchEmoji) => set(state => ({ searchEmoji: { ...state.searchEmoji, ...newSearchEmoji } })),
+  searchEmoji: { emoji: "", sticker: "", gif: "" },
+  setSearchEmoji: (newSearchEmoji) =>
+    set((state) => ({
+      searchEmoji: { ...state.searchEmoji, ...newSearchEmoji },
+    })),
 
   stickers: [],
   setStickers: (data) => set({ stickers: data }),
 
   gifs: [],
   setGifs: (data) => set({ gifs: data }),
-	
+
   activeTab: "emoji",
-  setActiveTab: (activeTab) => set({ activeTab }),  
+  setActiveTab: (activeTab) => set({ activeTab }),
 
   cache: {},
-  setCache: (query, data) => set((state) => ({
-    cache: { ...state.cache, [query]: data }
-  }))
+  setCache: (query, data) =>
+    set((state) => ({
+      cache: { ...state.cache, [query]: data },
+    })),
 }));
 
-export const useJoinRequestToRoom = create<JoinReqeustToRoom>((set)=>({
-  isSendJoinRequest:false,
-  setIsSendJoinRequest: (value) => set({isSendJoinRequest:value}),
-}))
+export const useOnlineImageStore = create<OnlineImageState>((set, get) => ({
+  searchQuery: { image: "", video: "" },
+  setSearchQuery: (data) =>
+    set((state) => ({ searchQuery: { ...state.searchQuery, ...data } })),
+  onlineImages: [],
+  setOnlineImages: (data) => set({ onlineImages: data }),
+  onlineVideos: [],
+  setOnlineVideos: (data) => set({ onlineVideos: data }),
+  cache: {},
+  setCache: (query, data) =>
+    set((state) => ({
+      cache: { ...state.cache, [query]: data },
+    })),
+  activeTab: "image",
+  setActiveTab: (activeTab) => set({ activeTab }),
+}));
 
-export const useMessagesStore = create<MessagesState>((set)=>({
+export const useJoinRequestToRoom = create<JoinReqeustToRoom>((set) => ({
+  isSendJoinRequest: false,
+  setIsSendJoinRequest: (value) => set({ isSendJoinRequest: value }),
+}));
+
+export const useMessagesStore = create<MessagesState>((set) => ({
   messages: [],
-  setMessages: (messages) => set({messages})
-}))
+  setMessages: (messages) => set({ messages }),
+}));

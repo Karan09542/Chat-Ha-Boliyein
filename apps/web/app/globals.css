@@ -178,6 +178,10 @@ input:checked + label  .image-show-toggle {
   animation: slide-in 0.3s ease-out forwards;
 }
 
+.graph {
+  @apply max-[600px]:w-full min-[600px]:!w-[600px] h-fit ;
+}
+
 /* content */
 @layer components {
 
@@ -188,7 +192,7 @@ input:checked + label  .image-show-toggle {
    @apply cursor-pointer active:scale-90 transition-all;
   }
   .sticker {
-   @apply  min-w-32 max-w-32;
+   @apply  !min-w-32 !max-w-32;
   }
 
   .hashtag {
@@ -203,7 +207,10 @@ input:checked + label  .image-show-toggle {
 /* max-[600px]:w-40 w-52 */
 
   :is(.content, .show-content) img {
-    @apply max-[600px]:w-40 mx-auto w-52 py-2 rounded-xl cursor-pointer;
+    @apply max-[600px]:max-w-[450px] w-full block mx-auto py-2 rounded-xl cursor-pointer;
+  }
+  .show-content img {
+    @apply max-w-[450px];
   }
 
   :is(.content, .show-content) iframe {
@@ -236,7 +243,7 @@ input:checked + label  .image-show-toggle {
     @apply text-xl  font-[var(--mukta)];
   }
   /* :is(.content, .show-content) a {
-    @apply bg-pink-500 cursor-pointer text-white rounded px-3 py-2;
+    @apply bg-pink-500 cursor-pointer text-white rounded ;
   } */
 }
 
@@ -431,4 +438,20 @@ right:0;
 .typing-indicator .dots::after {
   content: 'typ.';
   animation: dot-typing 1s steps(3, end) infinite;
+}
+
+.image-gallery {
+  width: minmax(600px, 100%);
+  columns: 3 200px;
+  column-gap: 10px;
+  overflow-y: auto;
+  margin: auto;
+  padding: 10px;
+  @apply max-[600px]:columns-2;
+}
+.image-gallery img {
+  width: 100%;
+  display: block;
+  margin-bottom: 10px;
+  cursor: pointer;
 }

@@ -2,14 +2,23 @@
 
 import React from "react";
 import { RxCross2 } from "react-icons/rx";
+import LineChart from "../../chart/LineChart";
+import BarChart from "../../chart/BarChart";
+import PieChart from "../../chart/PieChart";
 
 type MediaProps = {
   blockProps: {
     mediaData?: {
-      src: string;
+      src?: string;
       name?: string;
       className?: string;
-      fileType?: string
+      fileType?: string;
+      graph?: {
+        type: string;
+        data: any;
+      };
+      type?: string;
+      data?: any;
     };
     onRemove: (blockKey: string) => void;
   };
@@ -20,18 +29,23 @@ type MediaProps = {
 const MediaComponent = ({ blockProps, block, contentState }: MediaProps) => {
   const { mediaData, onRemove } = blockProps || {};
   const blockKey = block.getKey();
-  const entityKey = block.getEntityAt(0)
+  const entityKey = block.getEntityAt(0);
 
+  const mediaType = entityKey
+    ? contentState.getEntity(entityKey).type || ""
+    : "";
 
+    if(!mediaData) return null
 
-  if (!mediaData || !mediaData.src) return null;
+  if ( mediaType !== "GRAPH" && !mediaData.src) return null;
 
-  const { src, name, className, fileType } = mediaData;
-  const mediaType = entityKey ? contentState.getEntity(entityKey).type || "" : ""
+  let { src , name, className, fileType, graph} = mediaData;
+
+  
+
+  console.log({ mediaType });
 
   const GetMediaTag = () => {
-
-
     switch (mediaType) {
       case "VIDEO":
         return (
@@ -63,7 +77,12 @@ const MediaComponent = ({ blockProps, block, contentState }: MediaProps) => {
       case "FILE":
         return (
           <div className="flex rounded dark:border-white/20 border-black/20 border px-3 py-1 dark:bg-white/20 bg-black/10 w-full h-full">
-            <svg xmlns="http://www.w3.org/2000/svg" className="inline-block w-6 h-7 mr-2" viewBox="0 0 30 20" fill="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="inline-block w-6 h-7 mr-2"
+              viewBox="0 0 30 20"
+              fill="currentColor"
+            >
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM13 3.5L18.5 9H14a1 1 0 01-1-1V3.5z" />
             </svg>
 
@@ -73,6 +92,17 @@ const MediaComponent = ({ blockProps, block, contentState }: MediaProps) => {
             </div>
           </div>
         );
+      case "GRAPH":
+        switch (graph?.type) {
+          case "LINE":
+            return <LineChart chartData={graph?.data} className="graph"  />;
+          case "BAR":
+            return <BarChart chartData={graph?.data} className="graph" />;
+          case "PIE":
+            return <PieChart chartData={graph?.data} className="graph" />;
+        } 
+
+
       default:
         return null;
     }
@@ -80,8 +110,9 @@ const MediaComponent = ({ blockProps, block, contentState }: MediaProps) => {
 
   return (
     <div
-      className={`relative transition-all ${mediaType || ""
-        }-container min-[600px]:w-[334px]`}
+      className={`relative transition-all ${
+        mediaType || ""
+      }-container min-[600px]:w-[334px]`}
       style={
         ["IFRAME", "VIDEO"].includes(mediaType)
           ? { aspectRatio: "16/9" }
@@ -111,6 +142,3 @@ export default React.memo(MediaComponent, (prevProps, nextProps) => {
     prev?.className === next?.className
   );
 });
-
-
-
