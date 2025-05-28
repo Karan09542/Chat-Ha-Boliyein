@@ -101,3 +101,5 @@ DB_PASSWORD = passowrd mandatory
 ```
 
 Make sure to replace placeholders like mandatory, mongodb-atlas, and password with your actual credentials
+
+# run npm install on (root-level, apps/server, app/web)
