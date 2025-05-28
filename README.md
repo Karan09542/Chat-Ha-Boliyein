@@ -74,3 +74,27 @@ What happens when we focus on simple ideas? They evolve into something big. You 
 - **WebSockets / Socket.io** (Real-time communication)
 
 ---
+
+
+## 🔐 Environment Variables Setup
+
+### 🧩 Frontend (`apps/web/.env.local`)
+
+Create a `.env.local` file inside the `apps/web` directory and add:
+
+```env
+SONAR_API_KEY=
+PEXELS_API_KEY=
+
+Replace the values with your actual API keys.
+
+## ⚙️ Backend (apps/server/.env)
+### Create a .env file inside the apps/server directory and add:
+
+REDIS_URL=mandatory
+REDIS_PASSWORD=mandatory
+NODE_ENV=production
+DB_URL= mongodb-atlas mandatory
+DB_PASSWORD = passowrd mandatory
+
+Make sure to replace placeholders like mandatory, mongodb-atlas, and password with your actual credentials
