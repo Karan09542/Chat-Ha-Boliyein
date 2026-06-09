@@ -9,10 +9,10 @@
   },
   "devDependencies": {
     "tsc-watch": "^6.2.1",
-    "typescript": "^5.7.3",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-   "@types/cors": "^2.8.17",
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.11",
     "cors": "^2.8.5",
